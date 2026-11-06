@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
-import com.emigildev.emitv.ui.PantallaCategorias
+import com.emigildev.emitv.ui.PantallaEnVivo
 import com.emigildev.emitv.ui.theme.EmiTVTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape
                 ) {
-                    PantallaCategorias()
+                    PantallaEnVivo()
                 }
             }
         }

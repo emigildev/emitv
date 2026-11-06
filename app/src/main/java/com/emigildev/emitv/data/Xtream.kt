@@ -10,21 +10,37 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// 1. El "molde" de una categoría, tal como viene en el JSON de tu servidor.
+// Quita emojis y símbolos: "✴️ Argentina ✴️" -> "Argentina"
+fun limpiar(texto: String): String =
+    texto
+        .replace(Regex("[^\\p{L}\\p{N} +/.-]"), "")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+
+// ---------- Moldes de datos ----------
+
 @Serializable
 data class Categoria(
     @SerialName("category_id") val id: String,
     @SerialName("category_name") val nombre: String,
 ) {
-    // Nombre sin emojis ni símbolos: "✴️ Argentina ✴️" -> "Argentina"
     val nombreLimpio: String
-        get() = nombre
-            .replace(Regex("[^\\p{L}\\p{N} +/.-]"), "")
-            .replace(Regex("\\s+"), " ")
-            .trim()
+        get() = limpiar(nombre)
 }
 
-// 2. Qué pedidos le podemos hacer al servidor.
+@Serializable
+data class Canal(
+    @SerialName("stream_id") val id: Int,
+    @SerialName("name") val nombre: String,
+    @SerialName("stream_icon") val logo: String? = null,
+    @SerialName("epg_channel_id") val epgId: String? = null,
+) {
+    val nombreLimpio: String
+        get() = limpiar(nombre)
+}
+
+// ---------- Pedidos al servidor ----------
+
 interface XtreamApi {
     @GET("player_api.php")
     suspend fun categoriasEnVivo(
@@ -32,11 +48,24 @@ interface XtreamApi {
         @Query("password") clave: String,
         @Query("action") accion: String = "get_live_categories",
     ): List<Categoria>
-}
 
-// 3. El punto de acceso que usa el resto de la app.
+    @GET("player_api.php")
+    suspend fun canalesEnVivo(
+        @Query("username") usuario: String,
+        @Query("password") clave: String,
+        @Query("category_id") categoriaId: String,
+        @Query("action") accion: String = "get_live_streams",
+    ): List<Canal>
+}   // <- acá termina la interface: todo lo de arriba va ADENTRO
+
+// ---------- Punto de acceso para el resto de la app ----------
+
 object Xtream {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        coerceInputValues = true
+    }
 
     private val api: XtreamApi by lazy {
         Retrofit.Builder()
@@ -50,4 +79,7 @@ object Xtream {
         require(BuildConfig.XTREAM_URL.isNotBlank()) { "Falta xtream.url en local.properties" }
         return api.categoriasEnVivo(BuildConfig.XTREAM_USER, BuildConfig.XTREAM_PASS)
     }
+
+    suspend fun canales(categoriaId: String): List<Canal> =
+        api.canalesEnVivo(BuildConfig.XTREAM_USER, BuildConfig.XTREAM_PASS, categoriaId)
 }
