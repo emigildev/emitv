@@ -82,4 +82,11 @@ object Xtream {
 
     suspend fun canales(categoriaId: String): List<Canal> =
         api.canalesEnVivo(BuildConfig.XTREAM_USER, BuildConfig.XTREAM_PASS, categoriaId)
+
+    // "ts" o "m3u8". Los paneles XUI suelen andar mejor con "ts".
+    const val FORMATO_EN_VIVO = "ts"
+
+    fun urlEnVivo(canal: Canal): String =
+        "${BuildConfig.XTREAM_URL.trimEnd('/')}/live/" +
+                "${BuildConfig.XTREAM_USER}/${BuildConfig.XTREAM_PASS}/${canal.id}.$FORMATO_EN_VIVO"
 }
