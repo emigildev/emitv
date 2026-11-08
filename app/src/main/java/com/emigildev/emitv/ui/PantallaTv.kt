@@ -1,5 +1,7 @@
 package com.emigildev.emitv.ui
 
+import android.view.KeyEvent
+import android.view.LayoutInflater
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,9 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
@@ -38,17 +38,17 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.emigildev.emitv.R
 import com.emigildev.emitv.data.Canal
 import com.emigildev.emitv.data.Xtream
 import kotlinx.coroutines.delay
-import android.view.LayoutInflater
-import com.emigildev.emitv.R
 
 @Composable
 fun PantallaTv(vm: TvViewModel = viewModel()) {
@@ -63,8 +63,9 @@ fun PantallaTv(vm: TvViewModel = viewModel()) {
                 Reproductor(
                     canal = canal,
                     numero = vm.indice + 1,
-                    onArriba = vm::siguiente,
-                    onAbajo = vm::anterior,
+                    onSiguiente = vm::siguiente,
+                    onAnterior = vm::anterior,
+                    onNumero = vm::irANumero,
                 )
             }
         }
@@ -73,14 +74,30 @@ fun PantallaTv(vm: TvViewModel = viewModel()) {
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
-fun Reproductor(canal: Canal, numero: Int, onArriba: () -> Unit, onAbajo: () -> Unit) {
+fun Reproductor(
+    canal: Canal,
+    numero: Int,
+    onSiguiente: () -> Unit,
+    onAnterior: () -> Unit,
+    onNumero: (Int) -> Boolean,
+) {
     val context = LocalContext.current
 
     // 1. Crear el reproductor UNA vez y liberarlo al salir.
     val player = remember {
         val http = DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true)
+        // Arrancar con ~1 segundo de video guardado en vez de 2,5 (zapping más rápido).
+        val buffer = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                /* minBufferMs = */ 15_000,
+                /* maxBufferMs = */ 50_000,
+                /* bufferForPlaybackMs = */ 1_000,
+                /* bufferForPlaybackAfterRebufferMs = */ 2_000,
+            )
+            .build()
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(DefaultMediaSourceFactory(http))
+            .setLoadControl(buffer)
             .build()
     }
     DisposableEffect(player) {
@@ -93,7 +110,7 @@ fun Reproductor(canal: Canal, numero: Int, onArriba: () -> Unit, onAbajo: () -> 
         onStopOrDispose { player.pause() }
     }
 
-    // 3. Escuchar errores de reproducción para mostrarlos en pantalla.
+    // 3. Escuchar errores y estado de reproducción.
     var error by remember { mutableStateOf<String?>(null) }
     var estado by remember { mutableStateOf("") }
     DisposableEffect(player) {
@@ -137,7 +154,20 @@ fun Reproductor(canal: Canal, numero: Int, onArriba: () -> Unit, onAbajo: () -> 
         mostrarCartel = false
     }
 
-    // 6. Pedir el foco para recibir las teclas del control.
+    // 6. Marcar número de canal: se juntan los dígitos y, tras una pausa, se cambia.
+    var digitos by remember { mutableStateOf("") }
+    LaunchedEffect(digitos) {
+        if (digitos.isEmpty()) return@LaunchedEffect
+        // Con 3 dígitos cambia ya; si no, espera 1,5 s por si viene otro.
+        if (digitos.length < 3) delay(1500)
+        onNumero(digitos.toInt())
+        digitos = ""
+    }
+
+    // 7. Probador de teclas (diagnóstico): muestra el nombre del último botón recibido.
+    var ultimaTecla by remember { mutableStateOf("") }
+
+    // 8. Pedir el foco para recibir las teclas del control.
     val foco = remember { FocusRequester() }
     LaunchedEffect(Unit) { foco.requestFocus() }
 
@@ -147,9 +177,23 @@ fun Reproductor(canal: Canal, numero: Int, onArriba: () -> Unit, onAbajo: () -> 
             .background(Color.Black)
             .onKeyEvent { evento ->
                 if (evento.type != KeyEventType.KeyDown) return@onKeyEvent false
-                when (evento.key) {
-                    Key.DirectionUp -> { onArriba(); true }
-                    Key.DirectionDown -> { onAbajo(); true }
+                val codigo = evento.nativeKeyEvent.keyCode
+                ultimaTecla = KeyEvent.keyCodeToString(codigo)
+
+                val digito = when (codigo) {
+                    in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> codigo - KeyEvent.KEYCODE_0
+                    in KeyEvent.KEYCODE_NUMPAD_0..KeyEvent.KEYCODE_NUMPAD_9 -> codigo - KeyEvent.KEYCODE_NUMPAD_0
+                    else -> null
+                }
+
+                when {
+                    digito != null -> { digitos += digito; true }
+                    codigo == KeyEvent.KEYCODE_DPAD_UP || codigo == KeyEvent.KEYCODE_CHANNEL_UP -> {
+                        onSiguiente(); true
+                    }
+                    codigo == KeyEvent.KEYCODE_DPAD_DOWN || codigo == KeyEvent.KEYCODE_CHANNEL_DOWN -> {
+                        onAnterior(); true
+                    }
                     else -> false
                 }
             }
@@ -169,6 +213,20 @@ fun Reproductor(canal: Canal, numero: Int, onArriba: () -> Unit, onAbajo: () -> 
             Cartel(canal, numero, Modifier.align(Alignment.TopStart))
         }
 
+        // Número que se está marcando, grande arriba a la derecha.
+        if (digitos.isNotEmpty()) {
+            Text(
+                digitos,
+                style = MaterialTheme.typography.displayLarge,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(32.dp)
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+        }
+
         error?.let {
             Text(
                 "No se pudo reproducir:\n$it",
@@ -179,10 +237,11 @@ fun Reproductor(canal: Canal, numero: Int, onArriba: () -> Unit, onAbajo: () -> 
                     .padding(24.dp),
             )
         }
+
         // Diagnóstico provisorio (lo sacamos más adelante)
         val video = player.videoFormat
         Text(
-            "$estado · ${video?.sampleMimeType ?: "?"} · ${video?.height ?: "?"}p",
+            "$estado · ${video?.sampleMimeType ?: "?"} · ${video?.height ?: "?"}p · $ultimaTecla",
             color = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
