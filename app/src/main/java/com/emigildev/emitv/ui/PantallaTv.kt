@@ -2,6 +2,7 @@ package com.emigildev.emitv.ui
 
 import android.view.KeyEvent
 import android.view.LayoutInflater
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +51,13 @@ import com.emigildev.emitv.data.Canal
 import com.emigildev.emitv.data.Xtream
 import kotlinx.coroutines.delay
 
+// Teclas que cuentan como "OK" según el control.
+private val TECLAS_OK = setOf(
+    KeyEvent.KEYCODE_DPAD_CENTER,
+    KeyEvent.KEYCODE_ENTER,
+    KeyEvent.KEYCODE_NUMPAD_ENTER,
+)
+
 @Composable
 fun PantallaTv(vm: TvViewModel = viewModel()) {
     when (val c = vm.canales) {
@@ -61,6 +69,7 @@ fun PantallaTv(vm: TvViewModel = viewModel()) {
                 Mensaje("No hay canales para mostrar")
             } else {
                 Reproductor(
+                    canales = c.datos,                // NUEVO
                     canal = canal,
                     numero = vm.indice + 1,
                     onSiguiente = vm::siguiente,
@@ -75,6 +84,7 @@ fun PantallaTv(vm: TvViewModel = viewModel()) {
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun Reproductor(
+    canales: List<Canal>,                             // NUEVO
     canal: Canal,
     numero: Int,
     onSiguiente: () -> Unit,
@@ -167,17 +177,36 @@ fun Reproductor(
     // 7. Probador de teclas (diagnóstico): muestra el nombre del último botón recibido.
     var ultimaTecla by remember { mutableStateOf("") }
 
-    // 8. Pedir el foco para recibir las teclas del control.
+    // 8. NUEVO: lista de canales sobre el video.
+    var listaAbierta by remember { mutableStateOf(false) }
+    // Con la lista abierta, Atrás la cierra (en vez de salir de la app).
+    BackHandler(enabled = listaAbierta) {
+        listaAbierta = false
+    }
+
+    // 9. Foco: cuando la lista está cerrada, el foco vuelve al reproductor.
     val foco = remember { FocusRequester() }
-    LaunchedEffect(Unit) { foco.requestFocus() }
+    LaunchedEffect(listaAbierta) {                    // NUEVO (antes era LaunchedEffect(Unit))
+        if (!listaAbierta) foco.requestFocus()
+    }
 
     Box(
         Modifier
             .fillMaxSize()
             .background(Color.Black)
             .onKeyEvent { evento ->
-                if (evento.type != KeyEventType.KeyDown) return@onKeyEvent false
                 val codigo = evento.nativeKeyEvent.keyCode
+
+                // OK: la lista se abre al SOLTAR el botón (KeyUp), no al hundirlo.
+                // Si se abriera al hundirlo, el "soltar" llegaría a la lista recién
+                // abierta y elegiría el canal actual, cerrándola al instante.
+                if (codigo in TECLAS_OK) {
+                    if (listaAbierta) return@onKeyEvent false   // con la lista abierta, OK es de la lista
+                    if (evento.type == KeyEventType.KeyUp) listaAbierta = true
+                    return@onKeyEvent true                      // consumimos tanto KeyDown como KeyUp
+                }
+
+                if (evento.type != KeyEventType.KeyDown) return@onKeyEvent false
                 ultimaTecla = KeyEvent.keyCodeToString(codigo)
 
                 val digito = when (codigo) {
@@ -188,6 +217,8 @@ fun Reproductor(
 
                 when {
                     digito != null -> { digitos += digito; true }
+                    // Con la lista abierta, las flechas son de la lista.
+                    listaAbierta -> false
                     codigo == KeyEvent.KEYCODE_DPAD_UP || codigo == KeyEvent.KEYCODE_CHANNEL_UP -> {
                         onSiguiente(); true
                     }
@@ -209,8 +240,22 @@ fun Reproductor(
             modifier = Modifier.fillMaxSize(),
         )
 
-        if (mostrarCartel) {
+        // NUEVO: el cartel no se muestra mientras la lista está abierta.
+        if (mostrarCartel && !listaAbierta) {
             Cartel(canal, numero, Modifier.align(Alignment.TopStart))
+        }
+
+        // NUEVO: la lista.
+        if (listaAbierta) {
+            ListaCanales(
+                canales = canales,
+                indiceActual = numero - 1,
+                onElegir = { i ->
+                    onNumero(i + 1)
+                    listaAbierta = false
+                },
+                modifier = Modifier.align(Alignment.CenterStart),
+            )
         }
 
         // Número que se está marcando, grande arriba a la derecha.
