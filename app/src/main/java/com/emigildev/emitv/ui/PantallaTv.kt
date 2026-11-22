@@ -57,6 +57,9 @@ private val TECLAS_OK = setOf(
     KeyEvent.KEYCODE_ENTER,
     KeyEvent.KEYCODE_NUMPAD_ENTER,
 )
+// Diagnóstico en pantalla (estado, formato y última tecla).
+// Ponelo en true para probar, por ejemplo, si el control manda números por HDMI-CEC.
+private const val MOSTRAR_DIAGNOSTICO = false
 
 @Composable
 fun PantallaTv(vm: TvViewModel = viewModel()) {
@@ -283,17 +286,19 @@ fun Reproductor(
             )
         }
 
-        // Diagnóstico provisorio (lo sacamos más adelante)
-        val video = player.videoFormat
-        Text(
-            "$estado · ${video?.sampleMimeType ?: "?"} · ${video?.height ?: "?"}p · $ultimaTecla",
-            color = Color.White,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .background(Color.Black.copy(alpha = 0.6f))
-                .padding(8.dp),
-        )
+        // Diagnóstico: solo si está activado arriba.
+        if (MOSTRAR_DIAGNOSTICO) {
+            val video = player.videoFormat
+            Text(
+                "$estado · ${video?.sampleMimeType ?: "?"} · ${video?.height ?: "?"}p · $ultimaTecla",
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .padding(8.dp),
+            )
+        }
     }
 }
 
