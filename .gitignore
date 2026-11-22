@@ -33,3 +33,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Catálogo descargado del servicio (se usa localmente para la curación)
+curacion/catalogo/

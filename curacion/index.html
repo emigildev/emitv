@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EmiTV · Curación</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <header>
+    <h1>EmiTV · Curación</h1>
+  </header>
+
+  <section id="carga">
+    <h2>1. Cargar el catálogo</h2>
+    <label>Categorías: <input type="file" id="archivo-categorias" accept=".json"></label>
+    <label>Canales: <input type="file" id="archivo-canales" accept=".json"></label>
+    <p id="estado-carga">Todavía no cargaste nada.</p>
+  </section>
+
+  <main id="explorador" hidden>
+    <aside>
+      <h2>Categorías</h2>
+      <ul id="lista-categorias"></ul>
+    </aside>
+    <section>
+      <input type="search" id="buscador" placeholder="Buscar canal en todo el catálogo…">
+      <h2 id="titulo-canales">Elegí una categoría</h2>
+      <ul id="lista-canales"></ul>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
