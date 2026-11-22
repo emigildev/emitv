@@ -1,118 +1,140 @@
 {
   "version": 1,
-  "actualizado": "2026-11-22T15:41:27.618Z",
+  "actualizado": "2026-11-22T16:02:47.002Z",
   "simple": [
     {
       "tipo": "xtream",
       "id": 130579,
-      "nombre": "A24"
+      "nombre": "A24",
+      "original": "AR | A24 1"
     },
     {
       "tipo": "xtream",
       "id": 130577,
-      "nombre": "America TV"
+      "nombre": "America TV",
+      "original": "AR | America Tv 1"
     },
     {
       "tipo": "xtream",
       "id": 130586,
-      "nombre": "LN+"
+      "nombre": "LN+",
+      "original": "Ar | Ln+"
     },
     {
       "tipo": "xtream",
       "id": 130665,
-      "nombre": "Net TV"
+      "nombre": "Net TV",
+      "original": "AR | Net Tv"
     },
     {
       "tipo": "xtream",
       "id": 130581,
-      "nombre": "C5N"
+      "nombre": "C5N",
+      "original": "AR | C5n 1"
     },
     {
       "tipo": "xtream",
       "id": 130585,
-      "nombre": "Cronica"
+      "nombre": "Cronica",
+      "original": "AR | Cronica"
     },
     {
       "tipo": "xtream",
       "id": 130633,
-      "nombre": "TV Publica"
+      "nombre": "TV Publica",
+      "original": "AR | Tv Publica 1"
     },
     {
       "tipo": "xtream",
       "id": 355102,
-      "nombre": "Teleocho"
+      "nombre": "Teleocho",
+      "original": "TELEFE CORDOBA"
     },
     {
       "tipo": "xtream",
       "id": 130637,
-      "nombre": "El Nueve"
+      "nombre": "El Nueve",
+      "original": "AR | El nueve 1"
     },
     {
       "tipo": "xtream",
       "id": 355104,
-      "nombre": "Neo TV"
+      "nombre": "Neo TV",
+      "original": "Neo TV ✪ | AR"
     },
     {
       "tipo": "xtream",
       "id": 130642,
-      "nombre": "Telefe"
+      "nombre": "Telefe",
+      "original": "AR | Telefe 1"
     }
   ],
   "completa": [
     {
       "tipo": "xtream",
       "id": 130579,
-      "nombre": "A24"
+      "nombre": "A24",
+      "original": "AR | A24 1"
     },
     {
       "tipo": "xtream",
       "id": 130577,
-      "nombre": "America TV"
+      "nombre": "America TV",
+      "original": "AR | America Tv 1"
     },
     {
       "tipo": "xtream",
       "id": 130586,
-      "nombre": "LN+"
+      "nombre": "LN+",
+      "original": "Ar | Ln+"
     },
     {
       "tipo": "xtream",
       "id": 130665,
-      "nombre": "Net TV"
+      "nombre": "Net TV",
+      "original": "AR | Net Tv"
     },
     {
       "tipo": "xtream",
       "id": 130581,
-      "nombre": "C5N"
+      "nombre": "C5N",
+      "original": "AR | C5n 1"
     },
     {
       "tipo": "xtream",
       "id": 130585,
-      "nombre": "Cronica"
+      "nombre": "Cronica",
+      "original": "AR | Cronica"
     },
     {
       "tipo": "xtream",
       "id": 130633,
-      "nombre": "TV Publica"
+      "nombre": "TV Publica",
+      "original": "AR | Tv Publica 1"
     },
     {
       "tipo": "xtream",
       "id": 355102,
-      "nombre": "Teleocho"
+      "nombre": "Teleocho",
+      "original": "TELEFE CORDOBA"
     },
     {
       "tipo": "xtream",
       "id": 130637,
-      "nombre": "El nueve"
+      "nombre": "El nueve",
+      "original": "AR | El nueve 1"
     },
     {
       "tipo": "xtream",
       "id": 355104,
-      "nombre": "Neo TV"
+      "nombre": "Neo TV",
+      "original": "Neo TV ✪ | AR"
     },
     {
       "tipo": "xtream",
       "id": 130642,
-      "nombre": "Telefe"
+      "nombre": "Telefe",
+      "original": "AR | Telefe 1"
     }
   ]
 }

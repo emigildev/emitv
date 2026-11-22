@@ -194,6 +194,7 @@ function agregar(nombreLista, canal) {
     tipo: "xtream",
     id: Number(canal.stream_id),
     nombre: limpiar(canal.name),
+    original: canal.name,
     respaldos: [],
   });
   actualizar();
@@ -224,6 +225,7 @@ function hacerPrincipal(item, id) {
   item.respaldos = (item.respaldos ?? []).filter(r => !mismoId(r, id));
   item.respaldos.unshift(anterior);  // unshift = agregar al principio
   item.id = Number(id);
+  item.original = buscarCanal(id)?.name ?? item.original;
   // Mantener abierto el panel aunque cambió el id
   if (panelesAbiertos.delete(claveAnterior)) panelesAbiertos.add(`${listaActiva}:${item.id}`);
   actualizar();
@@ -529,8 +531,13 @@ function mostrarAvisos() {
 function armarExportacion() {
   // Copia cada ítem tal cual, pero sin "respaldos" si está vacío (archivo más limpio).
   // "...resto" junta todas las demás propiedades (tipo, id, nombre y las que vengan en el futuro).
-  const limpiarItem = ({ respaldos, ...resto }) =>
-    respaldos && respaldos.length > 0 ? { ...resto, respaldos } : resto;
+    const limpiarItem = ({ respaldos, ...resto }) => {
+    // Listas armadas antes de tener "original": completarlo desde el catálogo.
+    if (resto.tipo === "xtream" && !resto.original) {
+      resto.original = buscarCanal(resto.id)?.name;
+    }
+    return respaldos && respaldos.length > 0 ? { ...resto, respaldos } : resto;
+  };
 
   return {
     version: VERSION_FORMATO,
