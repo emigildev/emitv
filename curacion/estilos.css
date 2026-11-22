@@ -106,3 +106,28 @@ button:disabled { opacity: 0.4; cursor: default; }
 #mi-lista li.vacia { color: var(--suave); border: none; }
 /* Canal que ya no existe en el catálogo (el proveedor lo cambió o lo quitó) */
 #mi-lista li.faltante input { color: #ff8a80; }
+/* ---------- Respaldos ---------- */
+button.con-respaldos { border-color: var(--acento); color: var(--acento); }
+
+#mi-lista li.panel-respaldos {
+  display: block;
+  background: #181818;
+  padding: 8px 8px 12px 3.5em;   /* sangría para que se vea "debajo" del canal */
+}
+.encabezado-respaldos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--suave);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+.fila-respaldo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+.fila-respaldo small { margin-left: auto; color: var(--suave); }
+.fila-respaldo input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--acento); }

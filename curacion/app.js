@@ -6,9 +6,14 @@ let categoriaElegida = null;  // id de la categoría que se está viendo
 // Lo que se muestra en la columna del catálogo (para poder redibujarlo).
 let vistaCanales = { lista: [], titulo: "Elegí una categoría" };
 
-// Tus dos listas. Cada ítem: { tipo: "xtream", id: 1021, nombre: "Telefe" }
+// Tus dos listas. Cada ítem: { tipo: "xtream", id: 1021, nombre: "Telefe", respaldos: [5512, 7781] }
 let listas = { simple: [], completa: [] };
 let listaActiva = "simple";
+
+// Repetidos: "telefe" -> [canal, canal, ...]. Se calcula al cargar el catálogo.
+let grupos = new Map();
+// Paneles de respaldos abiertos en tu lista (no se guarda: es solo de la vista).
+let panelesAbiertos = new Set();
 
 const NOMBRES_LISTA = { simple: "Simple", completa: "Completa" };
 const CLAVE_GUARDADO = "emitv-listas";
@@ -38,8 +43,56 @@ function buscarCanal(id) {
   return canales.find(c => mismoId(c.stream_id, id));
 }
 
+// ¿Está ese canal en la lista, como principal o como respaldo?
 function estaEnLista(nombreLista, id) {
-  return listas[nombreLista].some(item => item.tipo === "xtream" && mismoId(item.id, id));
+  return listas[nombreLista].some(item =>
+    item.tipo === "xtream" &&
+    (mismoId(item.id, id) || (item.respaldos ?? []).some(r => mismoId(r, id)))
+  );
+}
+
+// ================= Repetidos =================
+// Palabras que NO cambian qué canal es: calidad, códecs, "backup", país...
+const ETIQUETAS = /\b(fhd|uhd|hd|sd|4k|8k|hevc|h ?265|h ?264|1080p?|720p?|480p?|backup|bkp|alt|op ?\d|opcion ?\d|latam|ar|arg|argentina)\b/g;
+
+// Nombres con prefijo de país al principio: "AR | ...", "US: ..."
+const PREFIJO_PAIS = /^\s*[a-z]{2,3}\s*[|:]/i;
+
+// "AR | Telefe FHD [Backup]" -> "telefe"  ·  "AR | A 24 2" -> "a24"  ·  "ESPN 2 HD" -> "espn2"
+function claveBase(nombre) {
+  let texto = limpiar(nombre)
+    .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")  // letras "con estilo" -> normales, y sin acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")                         // todo lo que no sea letra o número -> espacio
+    .replace(ETIQUETAS, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Tu proveedor numera sus versiones al final: "AR | A24 1", "AR | A24 2".
+  // Solo en nombres con prefijo de país, y solo del 1 al 3, para no romper "ESPN 2" o "Canal 9".
+  if (PREFIJO_PAIS.test(nombre)) {
+    texto = texto.replace(/\s[1-3]$/, "");
+  }
+
+  return texto.replace(/\s/g, "");  // sin espacios: "a 24" = "a24"
+}
+
+// Agrupa todo el catálogo por clave base.
+function calcularGrupos() {
+  grupos = new Map();
+  for (const canal of canales) {
+    const clave = claveBase(canal.name);
+    if (!clave) continue;
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave).push(canal);
+  }
+}
+
+// Las otras versiones del mismo canal (sin incluir el propio).
+function similares(id) {
+  const canal = buscarCanal(id);
+  if (!canal) return [];
+  return (grupos.get(claveBase(canal.name)) ?? []).filter(c => !mismoId(c.stream_id, id));
 }
 
 function crearLogo(url) {
@@ -122,6 +175,7 @@ function cargarCatalogoGuardado() {
     const guardado = JSON.parse(texto);
     categorias = guardado.categorias;
     canales = guardado.canales;
+    calcularGrupos();
     const fecha = new Date(guardado.fecha).toLocaleString();
     estadoCarga.textContent =
       `Catálogo guardado del ${fecha} · Categorías: ${categorias.length} · Canales: ${canales.length}. ` +
@@ -140,8 +194,46 @@ function agregar(nombreLista, canal) {
     tipo: "xtream",
     id: Number(canal.stream_id),
     nombre: limpiar(canal.name),
+    respaldos: [],
   });
   actualizar();
+}
+
+// Marca o desmarca un canal como respaldo de un ítem.
+function alternarRespaldo(item, id) {
+  item.respaldos = item.respaldos ?? [];
+  const posicion = item.respaldos.findIndex(r => mismoId(r, id));
+  if (posicion >= 0) {
+    item.respaldos.splice(posicion, 1);
+  } else {
+    item.respaldos.push(Number(id));
+  }
+  actualizar();
+}
+
+// Todas las versiones similares pasan a ser respaldos.
+function usarTodosComoRespaldo(item) {
+  item.respaldos = similares(item.id).map(c => Number(c.stream_id));
+  actualizar();
+}
+
+// Intercambia: el respaldo pasa a ser el principal y el principal, el primer respaldo.
+function hacerPrincipal(item, id) {
+  const anterior = item.id;
+  const claveAnterior = `${listaActiva}:${anterior}`;
+  item.respaldos = (item.respaldos ?? []).filter(r => !mismoId(r, id));
+  item.respaldos.unshift(anterior);  // unshift = agregar al principio
+  item.id = Number(id);
+  // Mantener abierto el panel aunque cambió el id
+  if (panelesAbiertos.delete(claveAnterior)) panelesAbiertos.add(`${listaActiva}:${item.id}`);
+  actualizar();
+}
+
+function alternarPanel(item) {
+  const clave = `${listaActiva}:${item.id}`;
+  if (panelesAbiertos.has(clave)) panelesAbiertos.delete(clave);
+  else panelesAbiertos.add(clave);
+  mostrarLista();
 }
 
 function quitar(indice) {
@@ -198,6 +290,7 @@ async function cargar() {
     const cans = await leerJson(inputCanales);
     if (cats) categorias = cats;
     if (cans) canales = cans;
+    calcularGrupos();
   } catch (e) {
     estadoCarga.textContent = "No se pudo leer el archivo: " + e.message;
     return;
@@ -259,8 +352,11 @@ function refrescarCanales() {
     const nombre = document.createElement("span");
     nombre.textContent = limpiar(canal.name);
 
+    const versiones = (grupos.get(claveBase(canal.name)) ?? []).length;
     const detalle = document.createElement("small");
-    detalle.textContent = `#${canal.stream_id} · ${nombreCategoria(canal.category_id)}`;
+    detalle.textContent =
+      `#${canal.stream_id} · ${nombreCategoria(canal.category_id)}` +
+      (versiones > 1 ? ` · ${versiones} versiones` : "");
 
     // Un botón por lista: "+ Simple" o "✓ Simple" si ya está.
     const acciones = document.createElement("div");
@@ -320,8 +416,20 @@ function mostrarLista() {
       : `#${item.id} — no está en el catálogo actual`;
     campo.addEventListener("change", () => renombrar(i, campo.value));
 
+    const otros = similares(item.id);
+    const cantidadRespaldos = (item.respaldos ?? []).length;
+    const abierto = panelesAbiertos.has(`${listaActiva}:${item.id}`);
+
     const acciones = document.createElement("div");
     acciones.className = "acciones";
+    if (otros.length > 0 || cantidadRespaldos > 0) {
+      const boton = crearBoton(
+        `Respaldos ${cantidadRespaldos}/${otros.length} ${abierto ? "▴" : "▾"}`,
+        () => alternarPanel(item),
+      );
+      if (cantidadRespaldos > 0) boton.classList.add("con-respaldos");
+      acciones.append(boton);
+    }
     acciones.append(
       crearBoton("↑", () => mover(i, -1), i === 0),
       crearBoton("↓", () => mover(i, +1), i === lista.length - 1),
@@ -331,7 +439,51 @@ function mostrarLista() {
     // "?." (optional chaining): si original es undefined, no falla y da undefined.
     li.append(numero, crearLogo(original?.stream_icon), campo, acciones);
     ul.appendChild(li);
+
+    if (abierto) ul.appendChild(crearPanelRespaldos(item, otros));
   });
+}
+
+// Panel debajo de un canal: sus otras versiones, para elegir respaldos o cambiar el principal.
+function crearPanelRespaldos(item, otros) {
+  const li = document.createElement("li");
+  li.className = "panel-respaldos";
+
+  const encabezado = document.createElement("div");
+  encabezado.className = "encabezado-respaldos";
+  encabezado.textContent = "Si el principal falla, la app prueba los respaldos en este orden.";
+  encabezado.append(crearBoton("Usar todos", () => usarTodosComoRespaldo(item)));
+  li.append(encabezado);
+
+  // Primero los respaldos elegidos (en su orden), después el resto.
+  const elegidos = (item.respaldos ?? []).map(r => buscarCanal(r) ?? { stream_id: r, name: `Canal ${r}` });
+  const resto = otros.filter(c => !(item.respaldos ?? []).some(r => mismoId(r, c.stream_id)));
+
+  for (const canal of [...elegidos, ...resto]) {
+    const fila = document.createElement("div");
+    fila.className = "fila-respaldo";
+
+    const marca = document.createElement("input");
+    marca.type = "checkbox";
+    marca.checked = (item.respaldos ?? []).some(r => mismoId(r, canal.stream_id));
+    marca.addEventListener("change", () => alternarRespaldo(item, canal.stream_id));
+
+    const nombre = document.createElement("span");
+    nombre.textContent = limpiar(canal.name);
+
+    const detalle = document.createElement("small");
+    detalle.textContent = `#${canal.stream_id} · ${nombreCategoria(canal.category_id)}`;
+
+    fila.append(
+      marca,
+      crearLogo(canal.stream_icon),
+      nombre,
+      detalle,
+      crearBoton("Hacer principal", () => hacerPrincipal(item, canal.stream_id)),
+    );
+    li.append(fila);
+  }
+  return li;
 }
 
 // ================= Pestañas y buscador =================
