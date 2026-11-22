@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.emigildev.emitv.data.Config
 import com.emigildev.emitv.data.ConfigRepo
 import com.emigildev.emitv.data.Xtream
 
@@ -16,16 +18,38 @@ fun App() {
 
     // Al arrancar: leer la configuración guardada y, si hay, aplicarla.
     var config by remember { mutableStateOf(repo.leer()?.also { Xtream.configurar(it) }) }
+    var enAjustes by remember { mutableStateOf(false) }
 
-    if (config == null) {
-        PantallaConfiguracion(
-            onListo = { nueva ->
-                repo.guardar(nueva)
-                Xtream.configurar(nueva)
-                config = nueva
-            }
+    // Un solo lugar para cambiar la configuración: guarda, aplica y actualiza la pantalla.
+    fun actualizar(nueva: Config?) {
+        if (nueva == null) {
+            repo.borrar()
+        } else {
+            repo.guardar(nueva)
+            Xtream.configurar(nueva)
+        }
+        config = nueva
+    }
+
+    val actual = config
+    when {
+        actual == null -> PantallaConfiguracion(
+            onListo = { actualizar(it) },
         )
-    } else {
-        PantallaTv()
+        enAjustes -> PantallaAjustes(
+            config = actual,
+            onCambiar = { actualizar(it) },
+            onCerrarSesion = {
+                actualizar(null)
+                enAjustes = false
+            },
+            onVolver = { enAjustes = false },
+        )
+        else -> PantallaTv(
+            // Un ViewModel por cuenta: si cerrás sesión y entrás con otra, no quedan sus canales viejos.
+            vm = viewModel(key = "${actual.url}|${actual.usuario}"),
+            mostrarDiagnostico = actual.diagnostico,
+            onAjustes = { enAjustes = true },
+        )
     }
 }

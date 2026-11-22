@@ -130,6 +130,10 @@ object Xtream {
     suspend fun probar(url: String, usuario: String, clave: String): InfoCuenta =
         crearApi(url).cuenta(usuario, clave).cuenta
 
+    /** Datos de la cuenta configurada: estado, vencimiento, conexiones. */
+    suspend fun infoCuenta(): InfoCuenta =
+        api().cuenta(cfg().usuario, cfg().clave).cuenta
+
     suspend fun categoriasEnVivo(): List<Categoria> =
         api().categoriasEnVivo(cfg().usuario, cfg().clave)
 

@@ -57,12 +57,15 @@ private val TECLAS_OK = setOf(
     KeyEvent.KEYCODE_ENTER,
     KeyEvent.KEYCODE_NUMPAD_ENTER,
 )
-// Diagnóstico en pantalla (estado, formato y última tecla).
-// Ponelo en true para probar, por ejemplo, si el control manda números por HDMI-CEC.
-private const val MOSTRAR_DIAGNOSTICO = false
+// Cuánto hay que mantener OK apretado para abrir los ajustes.
+private const val MS_OK_LARGO = 3000L
 
 @Composable
-fun PantallaTv(vm: TvViewModel = viewModel()) {
+fun PantallaTv(
+    vm: TvViewModel = viewModel(),
+    mostrarDiagnostico: Boolean = false,
+    onAjustes: () -> Unit = {},
+) {
     when (val c = vm.canales) {
         Carga.Cargando -> Mensaje("Cargando canales…")
         is Carga.Error -> Mensaje("No se pudo conectar:\n${c.mensaje}")
@@ -78,6 +81,8 @@ fun PantallaTv(vm: TvViewModel = viewModel()) {
                     onSiguiente = vm::siguiente,
                     onAnterior = vm::anterior,
                     onNumero = vm::irANumero,
+                    mostrarDiagnostico = mostrarDiagnostico,
+                    onAjustes = onAjustes,
                 )
             }
         }
@@ -93,6 +98,8 @@ fun Reproductor(
     onSiguiente: () -> Unit,
     onAnterior: () -> Unit,
     onNumero: (Int) -> Boolean,
+    mostrarDiagnostico: Boolean,
+    onAjustes: () -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -187,6 +194,9 @@ fun Reproductor(
         listaAbierta = false
     }
 
+    // OK mantenido 3 segundos -> ajustes (se abren al SOLTAR, igual que la lista).
+    var okLargo by remember { mutableStateOf(false) }
+
     // 9. Foco: cuando la lista está cerrada, el foco vuelve al reproductor.
     val foco = remember { FocusRequester() }
     LaunchedEffect(listaAbierta) {                    // NUEVO (antes era LaunchedEffect(Unit))
@@ -205,7 +215,19 @@ fun Reproductor(
                 // abierta y elegiría el canal actual, cerrándola al instante.
                 if (codigo in TECLAS_OK) {
                     if (listaAbierta) return@onKeyEvent false   // con la lista abierta, OK es de la lista
-                    if (evento.type == KeyEventType.KeyUp) listaAbierta = true
+                    val nativo = evento.nativeKeyEvent
+                    if (evento.type == KeyEventType.KeyDown) {
+                        // Mientras se mantiene OK llegan KeyDown repetidos. Medimos cuánto pasó
+                        // desde que se hundió (downTime) hasta este evento (eventTime).
+                        if (nativo.eventTime - nativo.downTime >= MS_OK_LARGO) okLargo = true
+                    } else if (evento.type == KeyEventType.KeyUp) {
+                        if (okLargo) {
+                            okLargo = false
+                            onAjustes()          // OK largo -> ajustes
+                        } else {
+                            listaAbierta = true  // OK corto -> lista
+                        }
+                    }
                     return@onKeyEvent true                      // consumimos tanto KeyDown como KeyUp
                 }
 
@@ -286,8 +308,22 @@ fun Reproductor(
             )
         }
 
-        // Diagnóstico: solo si está activado arriba.
-        if (MOSTRAR_DIAGNOSTICO) {
+        // Aviso mientras se mantiene OK.
+        if (okLargo) {
+            Text(
+                "Soltá OK para abrir los ajustes",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(48.dp)
+                    .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+            )
+        }
+
+        // Diagnóstico: se activa desde los ajustes.
+        if (mostrarDiagnostico) {
             val video = player.videoFormat
             Text(
                 "$estado · ${video?.sampleMimeType ?: "?"} · ${video?.height ?: "?"}p · $ultimaTecla",

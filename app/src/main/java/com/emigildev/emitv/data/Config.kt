@@ -10,6 +10,7 @@ data class Config(
     val usuario: String,
     val clave: String,
     val modo: Modo,
+    val diagnostico: Boolean = false,   // NUEVO: mostrar diagnóstico en pantalla
 )
 
 // Guarda y lee la configuración en el espacio privado de la app.
@@ -21,7 +22,8 @@ class ConfigRepo(context: Context) {
         val usuario = prefs.getString("usuario", null) ?: return null
         val clave = prefs.getString("clave", null) ?: return null
         val modo = Modo.entries.firstOrNull { it.name == prefs.getString("modo", null) } ?: Modo.SIMPLE
-        return Config(url, usuario, clave, modo)
+        val diagnostico = prefs.getBoolean("diagnostico", false)
+        return Config(url, usuario, clave, modo, diagnostico)
     }
 
     fun guardar(config: Config) {
@@ -30,6 +32,7 @@ class ConfigRepo(context: Context) {
             .putString("usuario", config.usuario)
             .putString("clave", config.clave)
             .putString("modo", config.modo.name)
+            .putBoolean("diagnostico", config.diagnostico)
             .apply()
     }
 
