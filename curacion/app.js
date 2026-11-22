@@ -274,6 +274,7 @@ function actualizar() {
   mostrarPestanas();
   mostrarLista();
   refrescarCanales();
+  mostrarAvisos();
 }
 
 // ================= Carga de archivos =================
@@ -485,6 +486,112 @@ function crearPanelRespaldos(item, otros) {
   }
   return li;
 }
+
+// ================= Exportar / importar lista.json =================
+// Versión del formato: si algún día lo cambiamos, la app sabe qué está leyendo.
+const VERSION_FORMATO = 1;
+
+// Revisa las listas y devuelve avisos (textos) sobre posibles problemas.
+function revisarListas() {
+  const avisos = [];
+  for (const nombreLista of ["simple", "completa"]) {
+    const lista = listas[nombreLista];
+    const etiqueta = NOMBRES_LISTA[nombreLista];
+    if (lista.length === 0) avisos.push(`La lista ${etiqueta} está vacía.`);
+
+    lista.forEach((item, i) => {
+      if (item.tipo !== "xtream") return;  // otros tipos (M3U, YouTube) se revisan en la 6D
+      const donde = `${etiqueta} ${i + 1} "${item.nombre}"`;
+      if (!buscarCanal(item.id)) {
+        avisos.push(`${donde}: el canal #${item.id} no está en el catálogo.`);
+      }
+      const perdidos = (item.respaldos ?? []).filter(r => !buscarCanal(r));
+      if (perdidos.length > 0) {
+        avisos.push(`${donde}: ${perdidos.length} respaldo(s) no están en el catálogo.`);
+      }
+    });
+  }
+  return avisos;
+}
+
+function mostrarAvisos() {
+  const ul = document.getElementById("avisos");
+  ul.innerHTML = "";
+  if (canales.length === 0) return;  // sin catálogo no tiene sentido revisar
+  for (const aviso of revisarListas()) {
+    const li = document.createElement("li");
+    li.textContent = "⚠ " + aviso;
+    ul.appendChild(li);
+  }
+}
+
+// Arma el objeto que se va a guardar en lista.json.
+function armarExportacion() {
+  // Copia cada ítem tal cual, pero sin "respaldos" si está vacío (archivo más limpio).
+  // "...resto" junta todas las demás propiedades (tipo, id, nombre y las que vengan en el futuro).
+  const limpiarItem = ({ respaldos, ...resto }) =>
+    respaldos && respaldos.length > 0 ? { ...resto, respaldos } : resto;
+
+  return {
+    version: VERSION_FORMATO,
+    actualizado: new Date().toISOString(),
+    simple: listas.simple.map(limpiarItem),
+    completa: listas.completa.map(limpiarItem),
+  };
+}
+
+function exportar() {
+  const avisos = revisarListas();
+  if (avisos.length > 0 && !confirm(`Hay ${avisos.length} aviso(s) (están debajo de las pestañas). ¿Exportar igual?`)) {
+    return;
+  }
+
+  // JSON con sangría de 2 espacios: así se lee bien en GitHub y en los "diff" de Git.
+  const texto = JSON.stringify(armarExportacion(), null, 2);
+
+  // Truco clásico para descargar un archivo generado en la página:
+  // 1) se crea un "archivo en memoria" (Blob), 2) un enlace que apunta a él, 3) se le hace clic.
+  const archivo = new Blob([texto], { type: "application/json" });
+  const url = URL.createObjectURL(archivo);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = "lista.json";
+  enlace.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);  // liberar la memoria después
+}
+
+async function importar(input) {
+  try {
+    const datos = await leerJson(input);
+    if (!datos) return;
+
+    // Validar antes de reemplazar nada
+    if (!Array.isArray(datos.simple) || !Array.isArray(datos.completa)) {
+      throw new Error("el archivo no tiene las listas \"simple\" y \"completa\".");
+    }
+    for (const item of [...datos.simple, ...datos.completa]) {
+      if (!item.tipo || !item.nombre) {
+        throw new Error(`hay un canal sin tipo o sin nombre: ${JSON.stringify(item)}`);
+      }
+    }
+
+    const resumen = `Simple: ${datos.simple.length} · Completa: ${datos.completa.length}`;
+    if (!confirm(`Se va a REEMPLAZAR tu lista actual por la del archivo (${resumen}). ¿Seguir?`)) return;
+
+    listas = { simple: datos.simple, completa: datos.completa };
+    panelesAbiertos.clear();
+    actualizar();
+  } catch (e) {
+    alert("No se pudo importar: " + e.message);
+  } finally {
+    input.value = "";  // para poder volver a elegir el mismo archivo
+  }
+}
+
+const inputImportar = document.getElementById("archivo-importar");
+document.getElementById("boton-exportar").addEventListener("click", exportar);
+document.getElementById("boton-importar").addEventListener("click", () => inputImportar.click());
+inputImportar.addEventListener("change", () => importar(inputImportar));
 
 // ================= Pestañas y buscador =================
 document.getElementById("pestana-simple").addEventListener("click", () => cambiarLista("simple"));

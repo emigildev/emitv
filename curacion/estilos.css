@@ -29,6 +29,7 @@ section, aside { padding: 16px; }
 /* Tres columnas: categorías | catálogo | tu lista */
 #explorador { display: grid; grid-template-columns: 260px 1fr 1fr; }
 #explorador > section { max-height: 85vh; overflow-y: auto; }
+
 /* En pantallas angostas, una sola columna */
 @media (max-width: 1000px) {
   #explorador { grid-template-columns: 1fr; }
@@ -104,8 +105,10 @@ button:disabled { opacity: 0.4; cursor: default; }
 }
 #mi-lista input:hover, #mi-lista input:focus { border-color: #444; background: var(--fondo); }
 #mi-lista li.vacia { color: var(--suave); border: none; }
+
 /* Canal que ya no existe en el catálogo (el proveedor lo cambió o lo quitó) */
 #mi-lista li.faltante input { color: #ff8a80; }
+
 /* ---------- Respaldos ---------- */
 button.con-respaldos { border-color: var(--acento); color: var(--acento); }
 
@@ -131,3 +134,8 @@ button.con-respaldos { border-color: var(--acento); color: var(--acento); }
 }
 .fila-respaldo small { margin-left: auto; color: var(--suave); }
 .fila-respaldo input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--acento); }
+
+/* ---------- Exportar / importar y avisos ---------- */
+.herramientas { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+#avisos { margin-bottom: 12px; }
+#avisos li { color: #ffcc80; font-size: 0.85rem; padding: 2px 0; }

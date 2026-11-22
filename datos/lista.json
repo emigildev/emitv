@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "actualizado": "2026-11-22T15:41:27.618Z",
+  "simple": [
+    {
+      "tipo": "xtream",
+      "id": 130579,
+      "nombre": "A24"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130577,
+      "nombre": "America TV"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130586,
+      "nombre": "LN+"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130665,
+      "nombre": "Net TV"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130581,
+      "nombre": "C5N"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130585,
+      "nombre": "Cronica"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130633,
+      "nombre": "TV Publica"
+    },
+    {
+      "tipo": "xtream",
+      "id": 355102,
+      "nombre": "Teleocho"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130637,
+      "nombre": "El Nueve"
+    },
+    {
+      "tipo": "xtream",
+      "id": 355104,
+      "nombre": "Neo TV"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130642,
+      "nombre": "Telefe"
+    }
+  ],
+  "completa": [
+    {
+      "tipo": "xtream",
+      "id": 130579,
+      "nombre": "A24"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130577,
+      "nombre": "America TV"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130586,
+      "nombre": "LN+"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130665,
+      "nombre": "Net TV"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130581,
+      "nombre": "C5N"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130585,
+      "nombre": "Cronica"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130633,
+      "nombre": "TV Publica"
+    },
+    {
+      "tipo": "xtream",
+      "id": 355102,
+      "nombre": "Teleocho"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130637,
+      "nombre": "El nueve"
+    },
+    {
+      "tipo": "xtream",
+      "id": 355104,
+      "nombre": "Neo TV"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130642,
+      "nombre": "Telefe"
+    }
+  ]
+}
