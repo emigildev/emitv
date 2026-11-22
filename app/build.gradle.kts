@@ -1,11 +1,3 @@
-import java.util.Properties
-
-val localProps = Properties().apply {
-    val archivo = rootProject.file("local.properties")
-    if (archivo.exists()) archivo.inputStream().use { load(it) }
-}
-fun localProp(clave: String): String = localProps.getProperty(clave, "")
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -24,9 +16,6 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
-        buildConfigField("String", "XTREAM_URL", "\"${localProp("xtream.url")}\"")
-        buildConfigField("String", "XTREAM_USER", "\"${localProp("xtream.user")}\"")
-        buildConfigField("String", "XTREAM_PASS", "\"${localProp("xtream.pass")}\"")
 
     }
 
@@ -44,7 +33,7 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
+
     }
 }
 
@@ -73,4 +62,5 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.exoplayer.hls)
     implementation(libs.media3.ui)
+    implementation(libs.androidx.compose.material3)
 }

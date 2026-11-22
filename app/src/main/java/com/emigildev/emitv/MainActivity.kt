@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
-import com.emigildev.emitv.ui.PantallaTv
+import com.emigildev.emitv.ui.App
 import com.emigildev.emitv.ui.theme.EmiTVTheme
 
 class MainActivity : ComponentActivity() {
@@ -16,12 +16,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            EmiTVTheme {
+            // Siempre oscuro: es lo natural en una TV y los textos están pensados para eso.
+            EmiTVTheme(isInDarkTheme = true) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape
                 ) {
-                    PantallaTv()
+                    App()
                 }
             }
         }
