@@ -26,11 +26,13 @@ h2 { font-size: 1.1rem; }
 section, aside { padding: 16px; }
 #carga label { display: block; margin: 8px 0; }
 
-/* Dos columnas: categorías (320px) y canales (el resto) */
-#explorador { display: grid; grid-template-columns: 320px 1fr; }
-/* En pantallas angostas (celular), una columna */
-@media (max-width: 700px) {
+/* Tres columnas: categorías | catálogo | tu lista */
+#explorador { display: grid; grid-template-columns: 260px 1fr 1fr; }
+#explorador > section { max-height: 85vh; overflow-y: auto; }
+/* En pantallas angostas, una sola columna */
+@media (max-width: 1000px) {
   #explorador { grid-template-columns: 1fr; }
+  #explorador > section { max-height: none; }
 }
 
 aside { background: var(--panel); max-height: 80vh; overflow-y: auto; }
@@ -59,3 +61,48 @@ ul { list-style: none; margin: 0; padding: 0; }
   border: 1px solid #444;
   border-radius: 6px;
 }
+/* ---------- Botones ---------- */
+button {
+  background: #2a2a2a;
+  color: var(--texto);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+}
+button:hover:not(:disabled) { border-color: var(--acento); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.acciones { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ---------- Pestañas ---------- */
+.pestanas { display: flex; gap: 8px; margin-bottom: 12px; }
+.pestana { font-size: 1rem; padding: 8px 16px; }
+.pestana.activa { background: var(--acento); color: #000; border-color: var(--acento); }
+
+/* ---------- Tu lista ---------- */
+#mi-lista li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #2a2a2a;
+}
+#mi-lista .numero { width: 2.5em; text-align: right; color: var(--suave); flex-shrink: 0; }
+#mi-lista img, #mi-lista .sin-logo { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
+#mi-lista input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  color: var(--texto);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font: inherit;
+}
+#mi-lista input:hover, #mi-lista input:focus { border-color: #444; background: var(--fondo); }
+#mi-lista li.vacia { color: var(--suave); border: none; }
+/* Canal que ya no existe en el catálogo (el proveedor lo cambió o lo quitó) */
+#mi-lista li.faltante input { color: #ff8a80; }
