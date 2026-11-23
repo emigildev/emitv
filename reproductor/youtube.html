@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>EmiTV · YouTube</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    #reproductor { width: 100%; height: 100%; }
+    #estado {
+      position: fixed; left: 8px; bottom: 8px;
+      color: #fff; font: 14px system-ui, sans-serif;
+      background: rgba(0, 0, 0, 0.6); padding: 4px 8px; border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="reproductor"></div>
+  <div id="estado" hidden></div>
+
+  <script>
+    // Uso: youtube.html?video=ID   o   youtube.html?canal=UC...
+    // Con &depurar se muestra abajo lo que va pasando.
+    const parametros = new URLSearchParams(location.search);
+    const video = parametros.get("video");
+    const canal = parametros.get("canal");
+    const depurar = parametros.has("depurar");
+
+    // Avisa lo que pasa: en pantalla (si &depurar) y a la app de la TV (si está escuchando).
+    function avisar(evento, dato = "") {
+      if (depurar) {
+        const caja = document.getElementById("estado");
+        caja.hidden = false;
+        caja.textContent = `${evento} ${dato}`;
+      }
+      window.EmiTV?.aviso?.(evento, String(dato));
+    }
+
+    // YouTube llama a esta función cuando su API terminó de cargar.
+    function onYouTubeIframeAPIReady() {
+      const opciones = {
+        autoplay: 1,
+        controls: 0,
+        rel: 0,
+        playsinline: 1,
+        origin: location.origin,
+        mute: parametros.has("silencio") ? 1 : 0,
+      };
+      new YT.Player("reproductor", {
+        // Para un canal: el video especial "live_stream" + el ID del canal = su vivo actual
+        videoId: canal ? "live_stream" : video,
+        playerVars: canal ? { ...opciones, channel: canal } : opciones,
+        events: {
+          onReady: (evento) => { evento.target.playVideo(); avisar("listo"); },
+          // 1 = reproduciendo, 3 = cargando, 2 = pausado, 0 = terminó
+          onStateChange: (evento) => avisar("estado", evento.data),
+          onError: (evento) => avisar("error", evento.data),
+        },
+      });
+    }
+  </script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
