@@ -405,7 +405,7 @@ function mostrarLista() {
   lista.forEach((item, i) => {
     const original = buscarCanal(item.id);  // puede ser undefined si ya no existe
     const li = document.createElement("li");
-    if (!original) li.classList.add("faltante");
+    if (canales.length > 0 && !original) li.classList.add("faltante");
 
     const numero = document.createElement("span");
     numero.className = "numero";
@@ -567,27 +567,36 @@ function exportar() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);  // liberar la memoria después
 }
 
+// Revisa que unos datos tengan el formato de lista.json. Si no, lanza un error.
+function validarLista(datos) {
+  if (!Array.isArray(datos?.simple) || !Array.isArray(datos?.completa)) {
+    throw new Error("no tiene las listas \"simple\" y \"completa\".");
+  }
+  for (const item of [...datos.simple, ...datos.completa]) {
+    if (!item.tipo || !item.nombre) {
+      throw new Error(`hay un canal sin tipo o sin nombre: ${JSON.stringify(item)}`);
+    }
+  }
+}
+
+// Reemplaza tus listas por las de "datos", pidiendo confirmación.
+function aplicarLista(datos, origen) {
+  const resumen = `Simple: ${datos.simple.length} · Completa: ${datos.completa.length}`;
+  if (!confirm(`Se va a REEMPLAZAR tu lista actual por la de ${origen} (${resumen}). ¿Seguir?`)) {
+    return false;
+  }
+  listas = { simple: datos.simple, completa: datos.completa };
+  panelesAbiertos.clear();
+  actualizar();
+  return true;
+}
+
 async function importar(input) {
   try {
     const datos = await leerJson(input);
     if (!datos) return;
-
-    // Validar antes de reemplazar nada
-    if (!Array.isArray(datos.simple) || !Array.isArray(datos.completa)) {
-      throw new Error("el archivo no tiene las listas \"simple\" y \"completa\".");
-    }
-    for (const item of [...datos.simple, ...datos.completa]) {
-      if (!item.tipo || !item.nombre) {
-        throw new Error(`hay un canal sin tipo o sin nombre: ${JSON.stringify(item)}`);
-      }
-    }
-
-    const resumen = `Simple: ${datos.simple.length} · Completa: ${datos.completa.length}`;
-    if (!confirm(`Se va a REEMPLAZAR tu lista actual por la del archivo (${resumen}). ¿Seguir?`)) return;
-
-    listas = { simple: datos.simple, completa: datos.completa };
-    panelesAbiertos.clear();
-    actualizar();
+    validarLista(datos);
+    aplicarLista(datos, "el archivo");
   } catch (e) {
     alert("No se pudo importar: " + e.message);
   } finally {
@@ -599,6 +608,135 @@ const inputImportar = document.getElementById("archivo-importar");
 document.getElementById("boton-exportar").addEventListener("click", exportar);
 document.getElementById("boton-importar").addEventListener("click", () => inputImportar.click());
 inputImportar.addEventListener("change", () => importar(inputImportar));
+
+// ================= GitHub: traer y publicar la lista =================
+const REPO = "emigildev/emitv";
+const RUTA_LISTA = "datos/lista.json";
+const CLAVE_TOKEN = "emitv-token";
+
+// "sha" = la huella de la versión del archivo en GitHub que tenemos.
+// GitHub la pide al publicar, para no pisar cambios hechos desde otro lado.
+let shaLista = null;
+
+const campoToken = document.getElementById("campo-token");
+const estadoGitHub = document.getElementById("estado-github");
+
+function token() {
+  return localStorage.getItem(CLAVE_TOKEN) ?? "";
+}
+
+function mostrarEstadoGitHub(texto) {
+  estadoGitHub.textContent = texto;
+}
+
+function mostrarEstadoToken() {
+  campoToken.value = "";
+  campoToken.placeholder = token() ? "Token guardado en este navegador ✓" : "Pegá acá tu token de GitHub";
+}
+
+// Llama a la API de GitHub para un archivo del repo. Lanza un error con .estado si falla.
+async function github(ruta, opciones = {}) {
+  const respuesta = await fetch(`https://api.github.com/repos/${REPO}/contents/${ruta}`, {
+    ...opciones,
+    cache: "no-store",  // siempre la versión más nueva, nada de copias viejas
+    headers: {
+      "Accept": "application/vnd.github+json",
+      ...(token() ? { "Authorization": `Bearer ${token()}` } : {}),
+    },
+  });
+  if (!respuesta.ok) {
+    const detalle = await respuesta.json().catch(() => ({}));
+    const error = new Error(`GitHub respondió ${respuesta.status}: ${detalle.message ?? "error"}`);
+    error.estado = respuesta.status;
+    throw error;
+  }
+  return respuesta.json();
+}
+
+// GitHub guarda el contenido en Base64. Estas dos funciones convierten
+// respetando acentos y eñes (btoa/atob solos se rompen con "Pública").
+function aBase64(texto) {
+  const bytes = new TextEncoder().encode(texto);
+  let binario = "";
+  for (const b of bytes) binario += String.fromCharCode(b);
+  return btoa(binario);
+}
+
+function desdeBase64(base64) {
+  const binario = atob(base64.replace(/\n/g, ""));
+  const bytes = Uint8Array.from(binario, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+async function traerDeGitHub() {
+  mostrarEstadoGitHub("Trayendo la lista de GitHub…");
+  try {
+    const archivo = await github(RUTA_LISTA);
+    const datos = JSON.parse(desdeBase64(archivo.content));
+    validarLista(datos);
+    if (aplicarLista(datos, "GitHub")) {
+      shaLista = archivo.sha;
+      const fecha = datos.actualizado ? new Date(datos.actualizado).toLocaleString() : "fecha desconocida";
+      mostrarEstadoGitHub(`Lista traída de GitHub ✓ (publicada el ${fecha})`);
+    } else {
+      mostrarEstadoGitHub("");
+    }
+  } catch (e) {
+    mostrarEstadoGitHub("No se pudo traer: " + e.message);
+  }
+}
+
+async function publicarEnGitHub() {
+  if (!token()) {
+    alert("Primero guardá tu token de GitHub.");
+    return;
+  }
+  if (!shaLista) {
+    alert("Antes de publicar, usá \"Traer de GitHub\" para partir de la última versión.");
+    return;
+  }
+  const avisos = revisarListas();
+  if (avisos.length > 0 && !confirm(`Hay ${avisos.length} aviso(s). ¿Publicar igual?`)) return;
+
+  mostrarEstadoGitHub("Publicando…");
+  try {
+    const texto = JSON.stringify(armarExportacion(), null, 2) + "\n";
+    const resultado = await github(RUTA_LISTA, {
+      method: "PUT",
+      body: JSON.stringify({
+        message: "Lista actualizada desde la página de curación",
+        content: aBase64(texto),
+        sha: shaLista,
+      }),
+    });
+    shaLista = resultado.content.sha;
+    mostrarEstadoGitHub(`Publicada ✓ ${new Date().toLocaleTimeString()} — las TVs la toman la próxima vez que se abra la app.`);
+  } catch (e) {
+    if (e.estado === 409) {
+      mostrarEstadoGitHub("La lista en GitHub cambió desde otro lado. Usá \"Traer de GitHub\" antes de publicar.");
+    } else if (e.estado === 401 || e.estado === 403) {
+      mostrarEstadoGitHub("GitHub rechazó el token (¿venció o le faltan permisos?).");
+    } else {
+      mostrarEstadoGitHub("No se pudo publicar: " + e.message);
+    }
+  }
+}
+
+document.getElementById("boton-guardar-token").addEventListener("click", () => {
+  const nuevo = campoToken.value.trim();
+  if (!nuevo) return;
+  localStorage.setItem(CLAVE_TOKEN, nuevo);
+  mostrarEstadoToken();
+  mostrarEstadoGitHub("Token guardado en este navegador.");
+});
+document.getElementById("boton-olvidar-token").addEventListener("click", () => {
+  localStorage.removeItem(CLAVE_TOKEN);
+  mostrarEstadoToken();
+  mostrarEstadoGitHub("Token borrado de este navegador.");
+});
+document.getElementById("boton-traer").addEventListener("click", traerDeGitHub);
+document.getElementById("boton-publicar").addEventListener("click", publicarEnGitHub);
+mostrarEstadoToken();
 
 // ================= Pestañas y buscador =================
 document.getElementById("pestana-simple").addEventListener("click", () => cambiarLista("simple"));
