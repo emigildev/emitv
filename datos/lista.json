@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T02:56:11.018Z",
+  "actualizado": "2026-11-23T03:08:06.757Z",
   "simple": [
     {
       "tipo": "xtream",
@@ -111,9 +111,12 @@
     },
     {
       "tipo": "xtream",
-      "id": 130581,
+      "id": 130582,
       "nombre": "C5N",
-      "original": "AR | C5n 1"
+      "original": "AR | C5n 2",
+      "respaldos": [
+        130581
+      ]
     },
     {
       "tipo": "xtream",
