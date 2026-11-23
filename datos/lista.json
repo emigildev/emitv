@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T05:36:28.458Z",
+  "actualizado": "2026-11-23T14:10:06.849Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -182,43 +182,92 @@
       "tipo": "xtream",
       "id": 130579,
       "nombre": "A24",
-      "original": "AR | A24 1"
+      "original": "AR | A24 1",
+      "respaldos": [
+        130580,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "A24.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__36.3A24_______"
+        }
+      ]
     },
     {
       "tipo": "xtream",
       "id": 130577,
       "nombre": "America TV",
-      "original": "AR | America Tv 1"
+      "original": "AR | America Tv 1",
+      "respaldos": [
+        130578,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "AmericaTV.ar@SD"
+        }
+      ]
     },
     {
       "tipo": "xtream",
       "id": 130586,
       "nombre": "LN+",
-      "original": "Ar | Ln+"
+      "original": "Ar | Ln+",
+      "respaldos": [
+        130587
+      ]
     },
     {
       "tipo": "xtream",
       "id": 130665,
       "nombre": "Net TV",
-      "original": "AR | Net Tv"
+      "original": "AR | Net Tv",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "NETTV.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__27.2NETTV_____"
+        }
+      ]
     },
     {
       "tipo": "xtream",
       "id": 130582,
       "nombre": "C5N",
-      "original": "AR | C5n 2"
+      "original": "AR | C5n 2",
+      "respaldos": [
+        130581
+      ]
     },
     {
       "tipo": "xtream",
       "id": 130585,
       "nombre": "Cronica",
-      "original": "AR | Cronica"
+      "original": "AR | Cronica",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__24.4CRONICA___"
+        }
+      ]
     },
     {
       "tipo": "xtream",
       "id": 130633,
       "nombre": "TV Publica",
-      "original": "AR | Tv Publica 1"
+      "original": "AR | Tv Publica 1",
+      "respaldos": [
+        130634
+      ]
     },
     {
       "tipo": "xtream",
@@ -230,7 +279,15 @@
       "tipo": "xtream",
       "id": 130637,
       "nombre": "El Nueve",
-      "original": "AR | El nueve 1"
+      "original": "AR | El nueve 1",
+      "respaldos": [
+        130638,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ElNueve.ar@SD"
+        }
+      ]
     },
     {
       "tipo": "xtream",
@@ -242,7 +299,11 @@
       "tipo": "xtream",
       "id": 130642,
       "nombre": "Telefe",
-      "original": "AR | Telefe 1"
+      "original": "AR | Telefe 1",
+      "respaldos": [
+        130643,
+        130644
+      ]
     },
     {
       "tipo": "xtream",
@@ -254,13 +315,33 @@
       "tipo": "xtream",
       "id": 130635,
       "nombre": "TN",
-      "original": "AR | Tn 1"
+      "original": "AR | Tn 1",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TN.ar@SD"
+        },
+        130636
+      ]
     },
     {
       "tipo": "xtream",
       "id": 130651,
       "nombre": "TyC Sports",
-      "original": "AR | 7yc Sp0rts Ar"
+      "original": "AR | 7yc Sp0rts Ar",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA_____CTYCSPORTS_"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TyCSports.ar@SD"
+        }
+      ]
     },
     {
       "tipo": "m3u",
@@ -272,77 +353,93 @@
     {
       "tipo": "xtream",
       "id": 355121,
-      "nombre": "Argentinisima Satelital AR",
+      "nombre": "Argentinisima Satelital",
       "original": "Argentinisima Satelital | AR"
     },
     {
       "tipo": "xtream",
       "id": 130653,
-      "nombre": "AREPñ1",
+      "nombre": "ESPN 1",
       "original": "AR*E$Pñ**1"
     },
     {
       "tipo": "xtream",
       "id": 130654,
-      "nombre": "AREPñ2",
+      "nombre": "ESPN 2",
       "original": "AR**E$Pñ*2"
     },
     {
       "tipo": "xtream",
       "id": 130656,
-      "nombre": "AREpñ3",
+      "nombre": "ESPN 3",
       "original": "AR**E€pñ**3"
     },
     {
       "tipo": "xtream",
       "id": 130657,
-      "nombre": "AREPÑ4",
+      "nombre": "ESPN 4",
       "original": "AR**E$PÑ**4"
     },
     {
       "tipo": "xtream",
-      "id": 130645,
-      "nombre": "AR T n t Sp0rts 1",
-      "original": "AR | T n t Sp0rts 1"
+      "id": 130648,
+      "nombre": "ESPN Premium",
+      "original": "AR |**Premium**OPC. 1"
     },
     {
       "tipo": "m3u",
       "fuente": "ariptv",
       "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___",
-      "nombre": "Canal 22 - WebTV - CABA TV Web - CD Cd Aut Bs As",
+      "nombre": "Canal 22",
       "logo": "https://radiosargentina.com.ar/png/VI---C22.png"
     },
     {
       "tipo": "xtream",
-      "id": 130646,
-      "nombre": "AR T n t Sp0rts 2",
-      "original": "AR | T n t Sp0rts 2"
-    },
-    {
-      "tipo": "xtream",
-      "id": 130648,
-      "nombre": "AR PremiumOPC. 1",
-      "original": "AR |**Premium**OPC. 1"
+      "id": 130645,
+      "nombre": "TNT Sports",
+      "original": "AR | T n t Sp0rts 1",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TNTSports.ar@HD"
+        }
+      ]
     },
     {
       "tipo": "xtream",
       "id": 379757,
-      "nombre": "VENEZUELA Telesur",
-      "original": "VENEZUELA | Telesur"
+      "nombre": "Telesur",
+      "original": "VENEZUELA | Telesur",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.4TELESUR___"
+        }
+      ]
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.5RT________",
+      "nombre": "RT",
+      "logo": "https://radiosargentina.com.ar/png/VI----RT.png"
     },
     {
       "tipo": "m3u",
       "fuente": "iptv-org",
       "clave": "Canal26.ar@SD",
       "nombre": "Canal 26",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Canal_26_logo_%282022%29.svg/500px-Canal_26_logo_%282022%29.svg.png"
-    },
-    {
-      "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.5RT________",
-      "nombre": "RT - 25.5TV - CABA TV TDA - CD Cd Aut Bs As",
-      "logo": "https://radiosargentina.com.ar/png/VI----RT.png"
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Canal_26_logo_%282022%29.svg/500px-Canal_26_logo_%282022%29.svg.png",
+      "respaldos": [
+        130584,
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__26.1CANAL26___"
+        }
+      ]
     }
   ]
 }
