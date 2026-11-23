@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T22:22:52.832Z",
+  "actualizado": "2026-11-23T22:25:23.922Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -256,11 +256,17 @@
       ]
     },
     {
-      "tipo": "m3u",
-      "fuente": "iptv-org",
-      "clave": "ChamameTV.ar@SD",
-      "nombre": "Chamame TV",
-      "logo": "https://i.imgur.com/JigzJck.png"
+      "tipo": "xtream",
+      "id": 340815,
+      "nombre": "TELEMUNDO INT",
+      "original": "TELEMUNDO INT",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TelemundoInternacional.us@South"
+        }
+      ]
     },
     {
       "tipo": "m3u",
@@ -564,19 +570,6 @@
       "id": 377925,
       "nombre": "SONY MOVIES",
       "original": "SONY MOVIES"
-    },
-    {
-      "tipo": "xtream",
-      "id": 340815,
-      "nombre": "TELEMUNDO INT",
-      "original": "TELEMUNDO INT",
-      "respaldos": [
-        {
-          "tipo": "m3u",
-          "fuente": "iptv-org",
-          "clave": "TelemundoInternacional.us@South"
-        }
-      ]
     }
   ],
   "completa": [
