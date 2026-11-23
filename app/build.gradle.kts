@@ -14,17 +14,40 @@ android {
         applicationId = "com.emigildev.emitv"
         minSdk = 28
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        // En GitHub Actions cada compilación tiene un número que sube solo (1, 2, 3…).
+        // En tu PC no existe, y se usa 1.
+        val numeroCompilacion = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = numeroCompilacion
+        versionName = "1.0.$numeroCompilacion"
 
+    }
+
+    // Firma de la versión definitiva. Los datos vienen de variables de entorno
+    // (en GitHub Actions, de los secretos del repo): nunca están en el código.
+    val archivoFirma = System.getenv("EMITV_KEYSTORE")
+    signingConfigs {
+        if (archivoFirma != null) {
+            create("release") {
+                storeFile = file(archivoFirma)
+                storePassword = System.getenv("EMITV_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("EMITV_KEY_ALIAS")
+                keyPassword = System.getenv("EMITV_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
+            if (archivoFirma != null) signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
+        }
+        debug {
+            // La versión de prueba es "otra app": puede convivir con la definitiva en la misma TV
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-prueba"
         }
     }
     compileOptions {

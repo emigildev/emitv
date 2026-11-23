@@ -1,0 +1,53 @@
+# Compila, firma y publica el APK de EmiTV cada vez que cambia la app.
+name: Compilar APK
+
+on:
+  push:
+    branches: [main]
+    # Solo si cambió la app. Los cambios de la lista (datos/) o de la página no compilan nada.
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/**"
+  workflow_dispatch:   # además, un botón para compilar a mano
+
+permissions:
+  contents: write      # para poder publicar la Release
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Recuperar la clave de firma (desde los secretos)
+        run: echo "${{ secrets.EMITV_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/emitv.jks"
+
+      - name: Compilar la versión definitiva
+        env:
+          EMITV_KEYSTORE: ${{ runner.temp }}/emitv.jks
+          EMITV_KEYSTORE_PASSWORD: ${{ secrets.EMITV_KEYSTORE_PASSWORD }}
+          EMITV_KEY_ALIAS: ${{ secrets.EMITV_KEY_ALIAS }}
+          EMITV_KEY_PASSWORD: ${{ secrets.EMITV_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Publicar la Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: EmiTV 1.0.${{ github.run_number }}
+          files: app/build/outputs/apk/release/app-release.apk

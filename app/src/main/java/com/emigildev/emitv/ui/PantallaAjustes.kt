@@ -31,6 +31,7 @@ import com.emigildev.emitv.data.Xtream
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
@@ -69,6 +70,13 @@ fun PantallaAjustes(
             Modifier.weight(1f).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            val contexto = LocalContext.current
+            val version = remember {
+                runCatching { contexto.packageManager.getPackageInfo(contexto.packageName, 0).versionName }
+                    .getOrNull() ?: "?"
+            }
+            Text("EmiTV $version", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
             Text("Ajustes", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(8.dp))
 
