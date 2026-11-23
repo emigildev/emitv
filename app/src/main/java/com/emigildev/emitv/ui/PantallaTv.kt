@@ -47,7 +47,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.emigildev.emitv.R
-import com.emigildev.emitv.data.Canal
+import com.emigildev.emitv.data.CanalEnLista
 import com.emigildev.emitv.data.Xtream
 import kotlinx.coroutines.delay
 
@@ -72,12 +72,12 @@ fun PantallaTv(
         is Carga.Listo -> {
             val canal = vm.canalActual
             if (canal == null) {
-                Mensaje("No hay canales para mostrar")
+                Mensaje("Tu lista está vacía o ningún canal está disponible ahora.")
             } else {
                 Reproductor(
                     canales = c.datos,                // NUEVO
                     canal = canal,
-                    numero = vm.indice + 1,
+                    numero = canal.numero,
                     onSiguiente = vm::siguiente,
                     onAnterior = vm::anterior,
                     onNumero = vm::irANumero,
@@ -92,8 +92,8 @@ fun PantallaTv(
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun Reproductor(
-    canales: List<Canal>,                             // NUEVO
-    canal: Canal,
+    canales: List<CanalEnLista>,
+    canal: CanalEnLista,
     numero: Int,
     onSiguiente: () -> Unit,
     onAnterior: () -> Unit,
@@ -155,7 +155,7 @@ fun Reproductor(
     LaunchedEffect(canal.id) {
         error = null
         val item = MediaItem.Builder()
-            .setUri(Xtream.urlEnVivo(canal))
+            .setUri(Xtream.urlEnVivo(canal.principal))
             .setMimeType(
                 if (Xtream.FORMATO_EN_VIVO == "m3u8") MimeTypes.APPLICATION_M3U8
                 else MimeTypes.VIDEO_MP2T
@@ -274,9 +274,9 @@ fun Reproductor(
         if (listaAbierta) {
             ListaCanales(
                 canales = canales,
-                indiceActual = numero - 1,
-                onElegir = { i ->
-                    onNumero(i + 1)
+                actual = canal,
+                onElegir = { n ->
+                    onNumero(n)
                     listaAbierta = false
                 },
                 modifier = Modifier.align(Alignment.CenterStart),
@@ -339,7 +339,7 @@ fun Reproductor(
 }
 
 @Composable
-fun Cartel(canal: Canal, numero: Int, modifier: Modifier = Modifier) {
+fun Cartel(canal: CanalEnLista, numero: Int, modifier: Modifier = Modifier) {
     Row(
         modifier
             .padding(32.dp)
@@ -355,7 +355,7 @@ fun Cartel(canal: Canal, numero: Int, modifier: Modifier = Modifier) {
             contentScale = ContentScale.Fit,
             modifier = Modifier.size(56.dp),
         )
-        Text(canal.nombreLimpio, style = MaterialTheme.typography.headlineSmall, color = Color.White)
+        Text(canal.nombre, style = MaterialTheme.typography.headlineSmall, color = Color.White)
     }
 }
 

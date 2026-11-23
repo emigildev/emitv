@@ -47,7 +47,7 @@ fun App() {
         )
         else -> PantallaTv(
             // Un ViewModel por cuenta: si cerrás sesión y entrás con otra, no quedan sus canales viejos.
-            vm = viewModel(key = "${actual.url}|${actual.usuario}"),
+            vm = viewModel(key = "${actual.url}|${actual.usuario}|${actual.modo}"),
             mostrarDiagnostico = actual.diagnostico,
             onAjustes = { enAjustes = true },
         )

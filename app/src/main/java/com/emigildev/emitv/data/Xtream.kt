@@ -78,6 +78,13 @@ interface XtreamApi {
         @Query("category_id") categoriaId: String,
         @Query("action") accion: String = "get_live_streams",
     ): List<Canal>
+
+    @GET("player_api.php")
+    suspend fun todosLosCanalesEnVivo(
+        @Query("username") usuario: String,
+        @Query("password") clave: String,
+        @Query("action") accion: String = "get_live_streams",
+    ): List<Canal>
 }
 
 // ---------- Punto de acceso para el resto de la app ----------
@@ -139,6 +146,9 @@ object Xtream {
 
     suspend fun canales(categoriaId: String): List<Canal> =
         api().canalesEnVivo(cfg().usuario, cfg().clave, categoriaId)
+
+    suspend fun todosLosCanales(): List<Canal> =
+        api().todosLosCanalesEnVivo(cfg().usuario, cfg().clave)
 
     fun urlEnVivo(canal: Canal): String {
         val c = cfg()

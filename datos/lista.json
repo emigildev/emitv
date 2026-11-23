@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-22T16:02:47.002Z",
+  "actualizado": "2026-11-23T00:44:57.356Z",
   "simple": [
     {
       "tipo": "xtream",
@@ -16,9 +16,12 @@
     },
     {
       "tipo": "xtream",
-      "id": 130586,
+      "id": 130587,
       "nombre": "LN+",
-      "original": "Ar | Ln+"
+      "original": "AR | LN+ 2",
+      "respaldos": [
+        130586
+      ]
     },
     {
       "tipo": "xtream",

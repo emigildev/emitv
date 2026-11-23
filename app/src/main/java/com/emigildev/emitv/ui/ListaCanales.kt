@@ -29,16 +29,18 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
-import com.emigildev.emitv.data.Canal
+import com.emigildev.emitv.data.CanalEnLista
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun ListaCanales(
-    canales: List<Canal>,
-    indiceActual: Int,
-    onElegir: (Int) -> Unit,
+    canales: List<CanalEnLista>,
+    actual: CanalEnLista,
+    onElegir: (numero: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val indiceActual = canales.indexOfFirst { it.numero == actual.numero }.coerceAtLeast(0)
+
     // La lista arranca mostrando el canal actual (con 3 canales de margen arriba).
     val estadoLista = rememberLazyListState(
         initialFirstVisibleItemIndex = (indiceActual - 3).coerceAtLeast(0)
@@ -60,18 +62,18 @@ fun ListaCanales(
             modifier = Modifier.padding(start = 12.dp, bottom = 12.dp),
         )
         LazyColumn(state = estadoLista, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            itemsIndexed(canales, key = { _, canal -> canal.id }) { i, canal ->
+            itemsIndexed(canales, key = { _, canal -> canal.numero }) { i, canal ->
                 val esActual = i == indiceActual
                 ListItem(
                     selected = esActual,
-                    onClick = { onElegir(i) },
-                    headlineContent = { Text(canal.nombreLimpio, maxLines = 1) },
+                    onClick = { onElegir(canal.numero) },
+                    headlineContent = { Text(canal.nombre, maxLines = 1) },
                     leadingContent = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Text("${i + 1}", modifier = Modifier.width(40.dp))
+                            Text("${canal.numero}", modifier = Modifier.width(40.dp))
                             AsyncImage(
                                 model = canal.logo?.takeIf { it.isNotBlank() },
                                 contentDescription = null,
