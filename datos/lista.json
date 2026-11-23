@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T03:40:53.653Z",
+  "actualizado": "2026-11-23T04:31:51.498Z",
   "simple": [
     {
       "tipo": "xtream",
@@ -76,6 +76,18 @@
       "id": 130639,
       "nombre": "El Trece",
       "original": "AR | El trece 1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130635,
+      "nombre": "TN",
+      "original": "AR | Tn 1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130651,
+      "nombre": "TyC Sports",
+      "original": "AR | 7yc Sp0rts Ar"
     }
   ],
   "completa": [
@@ -150,6 +162,18 @@
       "id": 130639,
       "nombre": "El trece",
       "original": "AR | El trece 1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130635,
+      "nombre": "TN",
+      "original": "AR | Tn 1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130651,
+      "nombre": "TyC Sports",
+      "original": "AR | 7yc Sp0rts Ar"
     }
   ]
 }
