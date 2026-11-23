@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T16:19:21.436Z",
+  "actualizado": "2026-11-23T17:42:22.891Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -222,8 +222,9 @@
     },
     {
       "tipo": "youtube",
-      "canal": "UCUzonpa3XKurQVycdMY70XQ",
-      "nombre": "Canal 10"
+      "video": "9WaixaxSzIY",
+      "nombre": "Canal 10",
+      "logo": "https://i.ytimg.com/vi/9WaixaxSzIY/hqdefault.jpg"
     }
   ],
   "completa": [
@@ -577,8 +578,9 @@
     },
     {
       "tipo": "youtube",
-      "canal": "UCUzonpa3XKurQVycdMY70XQ",
-      "nombre": "Canal 10"
+      "video": "9WaixaxSzIY",
+      "nombre": "Canal 10",
+      "logo": "https://i.ytimg.com/vi/9WaixaxSzIY/hqdefault.jpg"
     }
   ]
 }
