@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T20:10:49.287Z",
+  "actualizado": "2026-11-23T22:17:17.504Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -13,10 +13,15 @@
       "original": "AR | A24 1"
     },
     {
-      "tipo": "xtream",
-      "id": 130577,
+      "tipo": "m3u",
       "nombre": "America TV",
-      "original": "AR | America Tv 1"
+      "fuente": "iptv-org",
+      "clave": "AmericaTV.ar@SD",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Am%C3%A9rica_TV_%28Nuevo_logo_Junio_2020%29.png/500px-Am%C3%A9rica_TV_%28Nuevo_logo_Junio_2020%29.png",
+      "respaldos": [
+        130577,
+        130578
+      ]
     },
     {
       "tipo": "xtream",
@@ -31,13 +36,25 @@
       "tipo": "xtream",
       "id": 130665,
       "nombre": "Net TV",
-      "original": "AR | Net Tv"
+      "original": "AR | Net Tv",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "NETTV.ar@SD"
+        },
+        355242,
+        355200
+      ]
     },
     {
       "tipo": "xtream",
       "id": 130581,
       "nombre": "C5N",
-      "original": "AR | C5n 1"
+      "original": "AR | C5n 1",
+      "respaldos": [
+        130582
+      ]
     },
     {
       "tipo": "xtream",
@@ -61,7 +78,15 @@
       "tipo": "xtream",
       "id": 130637,
       "nombre": "El Nueve",
-      "original": "AR | El nueve 1"
+      "original": "AR | El nueve 1",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ElNueve.ar@SD"
+        },
+        130638
+      ]
     },
     {
       "tipo": "youtube",
@@ -73,7 +98,21 @@
       "tipo": "xtream",
       "id": 130642,
       "nombre": "Telefe",
-      "original": "AR | Telefe 1"
+      "original": "AR | Telefe 1",
+      "respaldos": [
+        130643,
+        130644,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "Telefe.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TelefeBuenosAires.ar@SD"
+        }
+      ]
     },
     {
       "tipo": "youtube",
@@ -85,7 +124,15 @@
       "tipo": "xtream",
       "id": 130639,
       "nombre": "El Trece",
-      "original": "AR | El trece 1"
+      "original": "AR | El trece 1",
+      "respaldos": [
+        130640,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ElTrece.ar@SD"
+        }
+      ]
     },
     {
       "tipo": "m3u",
@@ -196,15 +243,15 @@
     },
     {
       "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__27.1BRAVOTV___",
+      "fuente": "iptv-org",
+      "clave": "BravoTV.ar@SD",
       "nombre": "Bravo TV",
-      "logo": "https://radiosargentina.com.ar/png/VI-BRAVO.png",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Bravotv.png",
       "respaldos": [
         {
           "tipo": "m3u",
-          "fuente": "iptv-org",
-          "clave": "BravoTV.ar@SD"
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__27.1BRAVOTV___"
         }
       ]
     },
