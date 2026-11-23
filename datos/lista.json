@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T14:34:58.798Z",
+  "actualizado": "2026-11-23T14:51:40.263Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -128,7 +128,16 @@
       "tipo": "xtream",
       "id": 130654,
       "nombre": "ESPN 2",
-      "original": "AR**E$Pñ*2"
+      "original": "AR**E$Pñ*2",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ESPN2LatinAmerica.us@Argentina"
+        },
+        380704,
+        380705
+      ]
     },
     {
       "tipo": "xtream",
