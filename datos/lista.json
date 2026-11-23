@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T14:10:06.849Z",
+  "actualizado": "2026-11-23T14:34:58.798Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -98,7 +98,19 @@
       "tipo": "xtream",
       "id": 355121,
       "nombre": "Argentinisima Satelital",
-      "original": "Argentinisima Satelital | AR"
+      "original": "Argentinisima Satelital | AR",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ArgentinisimaSatelital.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA_____CARGENTINIS"
+        }
+      ]
     },
     {
       "tipo": "xtream",
@@ -134,7 +146,21 @@
       "tipo": "xtream",
       "id": 130648,
       "nombre": "ESPN Premium",
-      "original": "AR |**Premium**OPC. 1"
+      "original": "AR |**Premium**OPC. 1",
+      "respaldos": [
+        130649,
+        130650,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ESPNPremium.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ESPNPremium.ar@HD"
+        }
+      ]
     },
     {
       "tipo": "xtream",
@@ -160,7 +186,10 @@
       "fuente": "ariptv",
       "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.6CANAL-E___",
       "nombre": "Canal E",
-      "logo": "https://radiosargentina.com.ar/png/VICANALE.png"
+      "logo": "https://radiosargentina.com.ar/png/VICANALE.png",
+      "respaldos": [
+        355161
+      ]
     },
     {
       "tipo": "m3u",
@@ -266,7 +295,12 @@
       "nombre": "TV Publica",
       "original": "AR | Tv Publica 1",
       "respaldos": [
-        130634
+        130634,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TVPublicaFueguina.ar@SD"
+        }
       ]
     },
     {
@@ -293,7 +327,19 @@
       "tipo": "xtream",
       "id": 355104,
       "nombre": "Neo TV",
-      "original": "Neo TV ✪ | AR"
+      "original": "Neo TV ✪ | AR",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "NeoTV.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARGBFLORE__16.1NEOTV_____"
+        }
+      ]
     },
     {
       "tipo": "xtream",
@@ -302,14 +348,32 @@
       "original": "AR | Telefe 1",
       "respaldos": [
         130643,
-        130644
+        130644,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "Telefe.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TelefeBuenosAires.ar@SD"
+        }
       ]
     },
     {
       "tipo": "xtream",
       "id": 130639,
       "nombre": "El trece",
-      "original": "AR | El trece 1"
+      "original": "AR | El trece 1",
+      "respaldos": [
+        130640,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ElTrece.ar@SD"
+        }
+      ]
     },
     {
       "tipo": "xtream",
@@ -354,7 +418,19 @@
       "tipo": "xtream",
       "id": 355121,
       "nombre": "Argentinisima Satelital",
-      "original": "Argentinisima Satelital | AR"
+      "original": "Argentinisima Satelital | AR",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA_____CARGENTINIS"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ArgentinisimaSatelital.ar@SD"
+        }
+      ]
     },
     {
       "tipo": "xtream",
@@ -384,14 +460,36 @@
       "tipo": "xtream",
       "id": 130648,
       "nombre": "ESPN Premium",
-      "original": "AR |**Premium**OPC. 1"
+      "original": "AR |**Premium**OPC. 1",
+      "respaldos": [
+        130649,
+        130650,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ESPNPremium.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "ESPNPremium.ar@HD"
+        }
+      ]
     },
     {
       "tipo": "m3u",
       "fuente": "ariptv",
       "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___",
       "nombre": "Canal 22",
-      "logo": "https://radiosargentina.com.ar/png/VI---C22.png"
+      "logo": "https://radiosargentina.com.ar/png/VI---C22.png",
+      "respaldos": [
+        355130,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "Canal22.ar@SD"
+        }
+      ]
     },
     {
       "tipo": "xtream",
