@@ -43,13 +43,19 @@ class YoutubeActivity : ComponentActivity() {
     private lateinit var cartel: TextView
     private val manejador = Handler(Looper.getMainLooper())
 
-    private var reproduciendo = false
+    private var yaReprodujo = false    // ¿ya empezó el canal en sí (no la publicidad)?
     private var terminada = false
     private var digitos = ""
 
-    // Vigilante: si no arranca (o se corta) en MS_ESPERA, se avisa un error -> respaldo automático
-    private val vigilante = Runnable {
-        if (!reproduciendo) terminar(ERROR, "no arrancó en ${MS_ESPERA / 1000} segundos")
+    // Vigilante: si pasa el tiempo programado sin que el canal arranque (o vuelva), se avisa
+    // un error y EmiTV pasa al siguiente respaldo. El motivo cambia según la etapa.
+    private var motivoVigilante = ""
+    private val vigilante = Runnable { terminar(ERROR, motivoVigilante) }
+
+    private fun vigilar(milisegundos: Long, motivo: String) {
+        motivoVigilante = motivo
+        manejador.removeCallbacks(vigilante)
+        manejador.postDelayed(vigilante, milisegundos)
     }
     private val ocultarCartel = Runnable { cartel.visibility = View.GONE }
     private val marcarNumero = Runnable { if (digitos.isNotEmpty()) terminar(NUMERO + digitos) }
@@ -100,23 +106,25 @@ class YoutubeActivity : ComponentActivity() {
             "$URL_REPRODUCTOR?video=${Uri.encode(video.orEmpty())}"
         }
         webView.loadUrl(url)
-        manejador.postDelayed(vigilante, MS_ESPERA)
+        // Etapa 1: que cargue la página y el reproductor de YouTube
+        vigilar(MS_CARGA, "el reproductor de YouTube no cargó")
     }
 
-    // Lo que avisa la página de YouTube
+    // Lo que avisa la página de YouTube.
+    // Ojo: durante la PUBLICIDAD, YouTube no avisa "reproduciendo" (1): ese aviso llega recién
+    // cuando empieza el canal. Por eso, antes de eso, se espera mucho más (MS_INICIO).
     private fun alAviso(evento: String, dato: String) {
         when (evento) {
+            "listo" ->                         // Etapa 2: publicidad (si hay) y arranque del canal
+                if (!yaReprodujo) vigilar(MS_INICIO, "el canal no arrancó (¿no está en vivo?)")
             "error" -> terminar(ERROR, "error $dato")
             "estado" -> when (dato) {
-                "1" -> {                       // reproduciendo
-                    reproduciendo = true
+                "1" -> {                       // el canal se está viendo: nada que vigilar
+                    yaReprodujo = true
                     manejador.removeCallbacks(vigilante)
                 }
-                "3" -> {                       // cargando: si ya venía reproduciendo, se cortó
-                    reproduciendo = false
-                    manejador.removeCallbacks(vigilante)
-                    manejador.postDelayed(vigilante, MS_ESPERA)
-                }
+                "3" ->                         // cargando: si el canal ya venía andando, se cortó
+                    if (yaReprodujo) vigilar(MS_CORTE, "la señal se cortó")
                 "0" -> terminar(ERROR, "la transmisión terminó")
             }
         }
@@ -186,7 +194,10 @@ class YoutubeActivity : ComponentActivity() {
 
     companion object {
         private const val URL_REPRODUCTOR = "https://emigildev.github.io/emitv/reproductor/youtube.html"
-        private const val MS_ESPERA = 12_000L
+        // Tiempos del vigilante
+        private const val MS_CARGA = 15_000L     // para que cargue el reproductor de YouTube
+        private const val MS_INICIO = 75_000L    // para que arranque el canal (publicidad incluida)
+        private const val MS_CORTE = 15_000L     // si el canal se corta después de haber arrancado
         private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
         private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 

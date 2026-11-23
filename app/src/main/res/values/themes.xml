@@ -1,4 +1,7 @@
 <resources>
 
-    <style name="Theme.EmiTV" parent="Theme.AppCompat.DayNight.NoActionBar" />
+    <!-- Siempre oscuro y con fondo negro (es el fondo de toda la app). -->
+    <style name="Theme.EmiTV" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
 </resources>
