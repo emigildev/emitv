@@ -6,8 +6,15 @@ let categoriaElegida = null;  // id de la categoría que se está viendo
 // Lo que se muestra en la columna del catálogo (para poder redibujarlo).
 let vistaCanales = { lista: [], titulo: "Elegí una categoría" };
 
-// Tus dos listas. Cada ítem: { tipo: "xtream", id: 1021, nombre: "Telefe", respaldos: [5512, 7781] }
-let listas = { simple: [], completa: [] };
+// Tus dos listas y las fuentes M3U. Cada ítem:
+//   { tipo: "xtream", id: 1021, nombre: "Telefe", respaldos: [5512, 7781] }
+//   { tipo: "m3u", fuente: "iptvorg", clave: "Encuentro.ar", nombre: "Encuentro", logo: "…" }
+// listas.fuentes: { iptvorg: "https://…/ar.m3u", … } (se publica junto con las listas)
+let listas = { simple: [], completa: [], fuentes: {} };
+
+// Canales de las listas M3U ya leídos: [{ fuente, clave, nombre, logo, grupo, url }, ...]
+// Viven solo en el navegador; la app de la TV descarga las M3U por su cuenta.
+let entradasM3u = [];
 let listaActiva = "simple";
 
 // Repetidos: "telefe" -> [canal, canal, ...]. Se calcula al cargar el catálogo.
@@ -50,6 +57,17 @@ function estaEnLista(nombreLista, id) {
     item.tipo === "xtream" &&
     (mismoId(item.id, id) || (item.respaldos ?? []).some(r => mismoId(r, id)))
   );
+}
+
+// ¿Está ese canal M3U en la lista?
+function estaEnListaM3u(nombreLista, fuente, clave) {
+  return listas[nombreLista].some(item =>
+    item.tipo === "m3u" && item.fuente === fuente && item.clave === clave
+  );
+}
+
+function buscarEntrada(fuente, clave) {
+  return entradasM3u.find(e => e.fuente === fuente && e.clave === clave);
 }
 
 // ================= Repetidos =================
@@ -137,7 +155,7 @@ function cargarLocal() {
     if (texto) {
       // "..." copia las propiedades guardadas sobre las vacías por defecto,
       // así si falta alguna lista, queda como [] en vez de undefined.
-      listas = { simple: [], completa: [], ...JSON.parse(texto) };
+      listas = { simple: [], completa: [], fuentes: {}, ...JSON.parse(texto) };
     }
   } catch (e) {
     console.warn("No se pudo leer lo guardado:", e);
@@ -206,6 +224,18 @@ function cargarCatalogoGuardado() {
 
 // ================= Acciones sobre la lista =================
 function agregar(nombreLista, canal) {
+  // Canal de una lista M3U
+  if (canal.m3u) {
+    const { fuente, clave, nombre, logo } = canal.m3u;
+    if (estaEnListaM3u(nombreLista, fuente, clave)) return;
+    // Sin lo que va entre paréntesis o corchetes: "Encuentro (720p) [Geo-blocked]" -> "Encuentro"
+    const nombreLimpio = limpiar(nombre.replace(/\s*[\[(][^\])]*[\])]/g, ""));
+    listas[nombreLista].push({ tipo: "m3u", fuente, clave, nombre: nombreLimpio, logo });
+    huboCambio();
+    return;
+  }
+
+  // Canal del proveedor IPTV
   if (estaEnLista(nombreLista, canal.stream_id)) return;
   listas[nombreLista].push({
     tipo: "xtream",
@@ -278,7 +308,9 @@ function renombrar(indice, nuevoNombre) {
     marcarPendiente(true);
   } else {
     // Nombre vacío: volver al original del catálogo
-    item.nombre = limpiar(buscarCanal(item.id)?.name ?? `Canal ${item.id}`);
+    item.nombre = item.tipo === "m3u"
+      ? limpiar(buscarEntrada(item.fuente, item.clave)?.nombre ?? item.clave)
+      : limpiar(buscarCanal(item.id)?.name ?? `Canal ${item.id}`);
     huboCambio();
   }
 }
@@ -341,6 +373,15 @@ function elegirCategoria(id) {
   categoriaElegida = id;
   document.getElementById("buscador").value = "";
   mostrarCategorias();
+
+  // Las fuentes M3U aparecen como categorías con id "m3u:<nombre>"
+  if (String(id).startsWith("m3u:")) {
+    const fuente = String(id).slice(4);
+    const deEsta = entradasM3u.filter(e => e.fuente === fuente).map(comoCanal);
+    mostrarCanales(deEsta, `📡 ${fuente}`);
+    return;
+  }
+
   const cat = categorias.find(c => mismoId(c.category_id, id));
   const deEsta = canales.filter(c => mismoId(c.category_id, id));
   mostrarCanales(deEsta, cat ? limpiar(cat.category_name) : "Categoría");
@@ -370,6 +411,31 @@ function mostrarCategorias() {
     opcion.selected = mismoId(cat.category_id, categoriaElegida);
     selector.appendChild(opcion);
   }
+
+  // Fuentes M3U, al final
+  for (const fuente of Object.keys(listas.fuentes)) {
+    const id = `m3u:${fuente}`;
+    const cantidad = entradasM3u.filter(e => e.fuente === fuente).length;
+    const texto = `📡 ${fuente} (${cantidad})`;
+
+    const li = document.createElement("li");
+    li.textContent = texto;
+    if (categoriaElegida === id) li.classList.add("elegida");
+    li.addEventListener("click", () => elegirCategoria(id));
+    ul.appendChild(li);
+
+    const opcion = document.createElement("option");
+    opcion.value = id;
+    opcion.textContent = texto;
+    opcion.selected = categoriaElegida === id;
+    selector.appendChild(opcion);
+  }
+}
+
+// Convierte una entrada M3U en un "canal" con la misma forma que los del proveedor,
+// así el resto del código la puede mostrar igual. El original queda en .m3u
+function comoCanal(entrada) {
+  return { stream_id: entrada.clave, name: entrada.nombre, stream_icon: entrada.logo, m3u: entrada };
 }
 
 document.getElementById("selector-categorias").addEventListener("change", (evento) => {
@@ -396,17 +462,23 @@ function refrescarCanales() {
     const nombre = document.createElement("span");
     nombre.textContent = limpiar(canal.name);
 
-    const versiones = (grupos.get(claveBase(canal.name)) ?? []).length;
     const detalle = document.createElement("small");
-    detalle.textContent =
-      `#${canal.stream_id} · ${nombreCategoria(canal.category_id)}` +
-      (versiones > 1 ? ` · ${versiones} versiones` : "");
+    if (canal.m3u) {
+      detalle.textContent = `📡 ${canal.m3u.fuente}` + (canal.m3u.grupo ? ` · ${canal.m3u.grupo}` : "");
+    } else {
+      const versiones = (grupos.get(claveBase(canal.name)) ?? []).length;
+      detalle.textContent =
+        `#${canal.stream_id} · ${nombreCategoria(canal.category_id)}` +
+        (versiones > 1 ? ` · ${versiones} versiones` : "");
+    }
 
     // Un botón por lista: "+ Simple" o "✓ Simple" si ya está.
     const acciones = document.createElement("div");
     acciones.className = "acciones";
     for (const nombreLista of ["simple", "completa"]) {
-      const ya = estaEnLista(nombreLista, canal.stream_id);
+      const ya = canal.m3u
+        ? estaEnListaM3u(nombreLista, canal.m3u.fuente, canal.m3u.clave)
+        : estaEnLista(nombreLista, canal.stream_id);
       acciones.append(
         crearBoton(
           `${ya ? "✓" : "+"} ${NOMBRES_LISTA[nombreLista]}`,
@@ -444,6 +516,10 @@ function mostrarLista() {
   }
 
   lista.forEach((item, i) => {
+    if (item.tipo === "m3u") {
+      ul.appendChild(filaM3u(item, i, lista.length));
+      return;
+    }
     const original = buscarCanal(item.id);  // puede ser undefined si ya no existe
     const li = document.createElement("li");
     if (canales.length > 0 && !original) li.classList.add("faltante");
@@ -486,6 +562,38 @@ function mostrarLista() {
 
     if (abierto) ul.appendChild(crearPanelRespaldos(item, otros));
   });
+}
+
+// Fila de "Mi lista" para un canal de una lista M3U (sin respaldos, por ahora).
+function filaM3u(item, i, total) {
+  const entrada = buscarEntrada(item.fuente, item.clave);
+  const fuenteCargada = entradasM3u.some(e => e.fuente === item.fuente);
+  const li = document.createElement("li");
+  if (fuenteCargada && !entrada) li.classList.add("faltante");
+
+  const numero = document.createElement("span");
+  numero.className = "numero";
+  numero.textContent = i + 1;
+
+  const campo = document.createElement("input");
+  campo.value = item.nombre;
+  campo.title = `📡 ${item.fuente} · ${item.clave}` + (fuenteCargada && !entrada ? " — no está en la lista M3U" : "");
+  campo.addEventListener("change", () => renombrar(i, campo.value));
+
+  const acciones = document.createElement("div");
+  acciones.className = "acciones";
+  const etiqueta = document.createElement("span");
+  etiqueta.className = "etiqueta-fuente";
+  etiqueta.textContent = `📡 ${item.fuente}`;
+  acciones.append(
+    etiqueta,
+    crearBoton("↑", () => mover(i, -1), i === 0),
+    crearBoton("↓", () => mover(i, +1), i === total - 1),
+    crearBoton("✕", () => quitar(i)),
+  );
+
+  li.append(numero, crearLogo(entrada?.logo || item.logo), campo, acciones);
+  return li;
 }
 
 // Panel debajo de un canal: sus otras versiones, para elegir respaldos o cambiar el principal.
@@ -543,8 +651,16 @@ function revisarListas() {
     if (lista.length === 0) avisos.push(`La lista ${etiqueta} está vacía.`);
 
     lista.forEach((item, i) => {
-      if (item.tipo !== "xtream") return;  // otros tipos (M3U, YouTube) se revisan en la 6D
       const donde = `${etiqueta} ${i + 1} "${item.nombre}"`;
+      if (item.tipo === "m3u") {
+        if (!listas.fuentes[item.fuente]) {
+          avisos.push(`${donde}: la fuente "${item.fuente}" no está en Ajustes → Fuentes M3U.`);
+        } else if (entradasM3u.some(e => e.fuente === item.fuente) && !buscarEntrada(item.fuente, item.clave)) {
+          avisos.push(`${donde}: ya no aparece en la lista M3U "${item.fuente}".`);
+        }
+        return;
+      }
+      if (item.tipo !== "xtream") return;
       if (!buscarCanal(item.id)) {
         avisos.push(`${donde}: el canal #${item.id} no está en el catálogo.`);
       }
@@ -560,7 +676,7 @@ function revisarListas() {
 function mostrarAvisos() {
   const ul = document.getElementById("avisos");
   ul.innerHTML = "";
-  if (canales.length === 0) return;  // sin catálogo no tiene sentido revisar
+  if (canales.length === 0 && entradasM3u.length === 0) return;  // sin catálogos no tiene sentido revisar
   for (const aviso of revisarListas()) {
     const li = document.createElement("li");
     li.textContent = "⚠ " + aviso;
@@ -583,6 +699,7 @@ function armarExportacion() {
   return {
     version: VERSION_FORMATO,
     actualizado: new Date().toISOString(),
+    fuentes: listas.fuentes,
     simple: listas.simple.map(limpiarItem),
     completa: listas.completa.map(limpiarItem),
   };
@@ -626,10 +743,12 @@ function aplicarLista(datos, origen, preguntar = true) {
   if (preguntar && !confirm(`Se va a REEMPLAZAR tu lista actual por la de ${origen} (${resumen}). ¿Seguir?`)) {
     return false;
   }
-  listas = { simple: datos.simple, completa: datos.completa };
+  listas = { simple: datos.simple, completa: datos.completa, fuentes: datos.fuentes ?? {} };
   panelesAbiertos.clear();
   guardarLocal();
   actualizar();
+  mostrarFuentes();
+  mostrarCategorias();
   return true;
 }
 
@@ -977,7 +1096,177 @@ async function sincronizarAlAbrir() {
 
   // 3) Servidor: completar el campo de Ajustes.
   await traerConfig();
+
+  // 4) Fuentes M3U que este navegador todavía no leyó.
+  for (const fuente of Object.keys(listas.fuentes)) {
+    if (!entradasM3u.some(e => e.fuente === fuente)) await actualizarFuente(fuente);
+  }
 }
+
+// ================= Fuentes M3U =================
+const CLAVE_M3U = "emitv-m3u";  // entradas leídas, por fuente: { iptvorg: { fecha, entradas }, ... }
+
+// Lee el texto de una lista M3U. Cada canal ocupa (al menos) dos líneas:
+//   #EXTINF:-1 tvg-id="Encuentro.ar" tvg-logo="…" group-title="Cultura",Encuentro
+//   https://…/playlist.m3u8
+function parsearM3u(texto, fuente) {
+  const entradas = [];
+  let actual = null;
+
+  for (const lineaCruda of texto.split(/\r?\n/)) {
+    const linea = lineaCruda.trim();
+
+    if (linea.startsWith("#EXTINF")) {
+      const atributo = nombre => linea.match(new RegExp(`${nombre}="([^"]*)"`))?.[1] ?? "";
+      // El nombre va después de la coma que sigue a los atributos (puede tener comas adentro)
+      const coma = linea.indexOf(",", linea.lastIndexOf('"') + 1);
+      actual = {
+        fuente,
+        nombre: coma >= 0 ? linea.slice(coma + 1).trim() : "",
+        tvgId: atributo("tvg-id"),
+        logo: atributo("tvg-logo"),
+        grupo: atributo("group-title"),
+        cabeceras: {},
+      };
+    } else if (linea.startsWith("#EXTVLCOPT:") && actual) {
+      // Opciones extra para reproducir (las que VLC entiende solo)
+      const [opcion, ...resto] = linea.slice("#EXTVLCOPT:".length).split("=");
+      const valor = resto.join("=");
+      if (opcion === "http-referrer") actual.cabeceras["Referer"] = valor;
+      if (opcion === "http-user-agent") actual.cabeceras["User-Agent"] = valor;
+    } else if (linea && !linea.startsWith("#") && actual) {
+      // La línea con la dirección del canal
+      actual.url = linea;
+      // Clave estable para encontrarlo después: el tvg-id si hay; si no, la propia URL
+      actual.clave = actual.tvgId || linea;
+      entradas.push(actual);
+      actual = null;
+    }
+  }
+  return entradas;
+}
+
+function guardarEntradasM3u(fuente, entradas) {
+  entradasM3u = [...entradasM3u.filter(e => e.fuente !== fuente), ...entradas];
+  try {
+    const guardado = JSON.parse(localStorage.getItem(CLAVE_M3U) || "{}");
+    guardado[fuente] = { fecha: new Date().toISOString(), entradas };
+    localStorage.setItem(CLAVE_M3U, JSON.stringify(guardado));
+  } catch (e) {
+    console.warn("No se pudo guardar la lista M3U en el navegador:", e);
+  }
+  mostrarCategorias();
+  mostrarFuentes();
+  actualizar();
+}
+
+function cargarM3uGuardadas() {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(CLAVE_M3U) || "{}");
+    entradasM3u = Object.values(guardado).flatMap(g => g.entradas);
+  } catch (e) {
+    console.warn("No se pudieron leer las listas M3U guardadas:", e);
+  }
+}
+
+// Descarga la M3U desde su dirección. Algunos sitios no lo permiten desde el navegador
+// (CORS): en ese caso hay que descargarla a mano y usar "Archivo".
+async function actualizarFuente(fuente) {
+  const estado = document.getElementById("estado-fuentes");
+  estado.textContent = `Descargando ${fuente}…`;
+  try {
+    const respuesta = await fetch(listas.fuentes[fuente], { cache: "no-store" });
+    if (!respuesta.ok) throw new Error(`el sitio respondió ${respuesta.status}`);
+    const entradas = parsearM3u(await respuesta.text(), fuente);
+    if (entradas.length === 0) throw new Error("no se encontraron canales en la lista");
+    guardarEntradasM3u(fuente, entradas);
+    notificar(`📡 ${fuente}: ${entradas.length} canales ✓`);
+    estado.textContent = "";
+  } catch (e) {
+    estado.textContent =
+      `No se pudo descargar ${fuente} (${e.message}). Si el sitio no lo permite desde el navegador, ` +
+      `descargá el archivo .m3u y cargalo con "Archivo".`;
+  }
+}
+
+async function cargarArchivoFuente(fuente, input) {
+  const archivo = input.files[0];
+  if (!archivo) return;
+  const entradas = parsearM3u(await archivo.text(), fuente);
+  input.value = "";
+  if (entradas.length === 0) {
+    alert("Ese archivo no parece una lista M3U.");
+    return;
+  }
+  guardarEntradasM3u(fuente, entradas);
+  notificar(`📡 ${fuente}: ${entradas.length} canales ✓`);
+}
+
+function agregarFuente() {
+  const campoNombre = document.getElementById("campo-fuente-nombre");
+  const campoUrl = document.getElementById("campo-fuente-url");
+  // Nombre corto: solo minúsculas, números y guiones (se usa como identificador)
+  const nombre = campoNombre.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+  const url = campoUrl.value.trim();
+  if (!nombre || !url) {
+    alert("Completá un nombre corto (ej: iptvorg) y la dirección de la lista.");
+    return;
+  }
+  listas.fuentes = { ...listas.fuentes, [nombre]: url };
+  campoNombre.value = "";
+  campoUrl.value = "";
+  huboCambio();
+  mostrarFuentes();
+  mostrarCategorias();
+  actualizarFuente(nombre);
+}
+
+function quitarFuente(fuente) {
+  const enUso = ["simple", "completa"].some(l => listas[l].some(i => i.tipo === "m3u" && i.fuente === fuente));
+  if (enUso && !confirm(`Hay canales de "${fuente}" en tus listas. Si la quitás, la app no va a poder reproducirlos. ¿Quitarla igual?`)) {
+    return;
+  }
+  const { [fuente]: _, ...resto } = listas.fuentes;  // copia sin esa fuente
+  listas.fuentes = resto;
+  entradasM3u = entradasM3u.filter(e => e.fuente !== fuente);
+  huboCambio();
+  mostrarFuentes();
+  mostrarCategorias();
+}
+
+function mostrarFuentes() {
+  const ul = document.getElementById("lista-fuentes");
+  ul.innerHTML = "";
+  for (const [fuente, url] of Object.entries(listas.fuentes)) {
+    const cantidad = entradasM3u.filter(e => e.fuente === fuente).length;
+    const li = document.createElement("li");
+
+    const texto = document.createElement("div");
+    texto.className = "fuente-texto";
+    texto.innerHTML = `<strong></strong><small></small>`;
+    texto.querySelector("strong").textContent = `📡 ${fuente} · ${cantidad} canales`;
+    texto.querySelector("small").textContent = url;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".m3u,.m3u8,.txt";
+    input.hidden = true;
+    input.addEventListener("change", () => cargarArchivoFuente(fuente, input));
+
+    const acciones = document.createElement("div");
+    acciones.className = "fila";
+    acciones.append(
+      crearBoton("⟳ Actualizar", () => actualizarFuente(fuente)),
+      crearBoton("Archivo", () => input.click()),
+      crearBoton("✕", () => quitarFuente(fuente)),
+      input,
+    );
+    li.append(texto, acciones);
+    ul.appendChild(li);
+  }
+}
+
+document.getElementById("boton-agregar-fuente").addEventListener("click", agregarFuente);
 
 // ================= Pestañas y buscador =================
 document.getElementById("pestana-simple").addEventListener("click", () => cambiarLista("simple"));
@@ -990,7 +1279,10 @@ document.getElementById("buscador").addEventListener("input", (evento) => {
   categoriaElegida = null;  // también vacía el desplegable al redibujar
   mostrarCategorias();
 
-  const resultado = canales.filter(c => limpiar(c.name).toLowerCase().includes(texto));
+  const resultado = [
+    ...canales.filter(c => limpiar(c.name).toLowerCase().includes(texto)),
+    ...entradasM3u.filter(e => limpiar(e.nombre).toLowerCase().includes(texto)).map(comoCanal),
+  ];
   mostrarCanales(resultado.slice(0, 300), `Resultados para "${evento.target.value}"`);
 });
 
@@ -1023,7 +1315,10 @@ function notificar(texto) {
 
 // ================= Al abrir la página =================
 cargarLocal();
-if (cargarCatalogoGuardado()) mostrarCategorias();
+cargarM3uGuardadas();
+cargarCatalogoGuardado();
+mostrarCategorias();
+mostrarFuentes();
 marcarPendiente(hayPendiente());
 mostrarVista(localStorage.getItem(CLAVE_VISTA) || "lista");
 actualizar();

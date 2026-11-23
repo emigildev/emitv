@@ -267,6 +267,13 @@ button.con-respaldos { border-color: var(--acento); color: var(--acento); }
   accent-color: var(--acento);
 }
 
+/* ---------- Fuentes M3U ---------- */
+#lista-fuentes li { padding: 8px 0; border-bottom: 1px solid var(--borde); }
+#lista-fuentes li:last-child { margin-bottom: 8px; }
+.fuente-texto { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; min-width: 0; }
+.fuente-texto small { color: var(--suave); font-size: 0.8rem; overflow-wrap: anywhere; }
+.etiqueta-fuente { font-size: 0.75rem; color: var(--suave); align-self: center; margin-right: auto; }
+
 /* ---------- Notificación flotante ---------- */
 #notificacion {
   position: fixed;
