@@ -1,8 +1,11 @@
 package com.emigildev.emitv.ui
 
+import android.app.Activity
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -144,6 +146,8 @@ fun Reproductor(
     var estado by remember { mutableStateOf("") }
     var estadoReproductor by remember { mutableIntStateOf(Player.STATE_IDLE) }
     var fallos by remember { mutableIntStateOf(0) }            // sube con cada error del reproductor
+    // Mientras se ve YouTube, el reproductor de siempre está apagado y no debe "informar" nada.
+    var usandoYoutube by remember { mutableStateOf(false) }
     DisposableEffect(player) {
         val escucha = object : Player.Listener {
             override fun onPlayerError(e: PlaybackException) {
@@ -151,6 +155,7 @@ fun Reproductor(
                 fallos++
             }
             override fun onPlaybackStateChanged(state: Int) {
+                if (usandoYoutube) return   // el estado lo informa YouTube
                 estadoReproductor = state
                 estado = when (state) {
                     Player.STATE_BUFFERING -> "Cargando…"
@@ -187,10 +192,12 @@ fun Reproductor(
     // 4a. Reproducir la señal que toca.
     LaunchedEffect(canal, intento, ronda) {
         if (fallaronTodas) return@LaunchedEffect
-        if (senales[intento] is Senal.DeYoutube) {
-            // YouTube se ve con su propio reproductor (más abajo): se apaga el de siempre
+        usandoYoutube = senales[intento] is Senal.DeYoutube
+        if (usandoYoutube) {
+            // YouTube se ve en su propia pantalla (YoutubeActivity, más abajo): se apaga el de siempre.
+            // Esa pantalla tiene su propio vigilante; acá no hay que vigilar nada.
             player.stop()
-            estadoReproductor = Player.STATE_BUFFERING   // "cargando" hasta que YouTube avise
+            estadoReproductor = Player.STATE_IDLE
             return@LaunchedEffect
         }
         try {
@@ -276,6 +283,38 @@ fun Reproductor(
     // OK mantenido 3 segundos -> ajustes (se abren al SOLTAR, igual que la lista).
     var okLargo by remember { mutableStateOf(false) }
 
+    // 10. YOUTUBE en su propia pantalla (YoutubeActivity).
+    //     Al volver, esa pantalla nos dice qué hizo el usuario (o si falló), y actuamos.
+    val senalActual = senales.getOrNull(intento)
+    var youtubeAbierto by remember { mutableStateOf(false) }
+    val lanzadorYoutube = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { resultado ->
+        youtubeAbierto = false
+        val accion = resultado.data?.getStringExtra(YoutubeActivity.EXTRA_ACCION) ?: YoutubeActivity.SALIR
+        when {
+            accion == YoutubeActivity.SIGUIENTE -> onSiguiente()
+            accion == YoutubeActivity.ANTERIOR -> onAnterior()
+            accion == YoutubeActivity.LISTA -> listaAbierta = true
+            accion == YoutubeActivity.ERROR -> {
+                error = "YouTube: " + resultado.data?.getStringExtra(YoutubeActivity.EXTRA_DETALLE).orEmpty()
+                fallos++   // -> respaldo automático
+            }
+            accion.startsWith(YoutubeActivity.NUMERO) ->
+                accion.removePrefix(YoutubeActivity.NUMERO).toIntOrNull()?.let { onNumero(it) }
+            accion == YoutubeActivity.SALIR -> (context as? Activity)?.finish()   // Atrás: salir, como en la TV
+            // PAUSA (botón Inicio): no se hace nada; al volver a EmiTV se reabre sola.
+        }
+    }
+    // Abrir la pantalla de YouTube cuando la señal actual es de YouTube
+    // (y no está ya abierta, ni la lista de canales encima).
+    LaunchedEffect(senalActual, ronda, fallaronTodas, listaAbierta, youtubeAbierto) {
+        if (senalActual is Senal.DeYoutube && !fallaronTodas && !listaAbierta && !youtubeAbierto) {
+            youtubeAbierto = true
+            lanzadorYoutube.launch(YoutubeActivity.intent(context, senalActual, canal.nombre, numero))
+        }
+    }
+
     // 9. Foco: cuando la lista está cerrada, el foco vuelve al reproductor.
     val foco = remember { FocusRequester() }
     LaunchedEffect(listaAbierta) {                    // NUEVO (antes era LaunchedEffect(Unit))
@@ -285,7 +324,8 @@ fun Reproductor(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            // Con YouTube, fondo transparente: su video puede dibujarse DETRÁS de la app
+            .background(if (usandoYoutube) Color.Transparent else Color.Black)
             .onKeyEvent { evento ->
                 val codigo = evento.nativeKeyEvent.keyCode
 
@@ -335,8 +375,6 @@ fun Reproductor(
             .focusRequester(foco)
             .focusable()
     ) {
-        // La señal que se está usando ahora.
-        val senalActual = senales.getOrNull(intento)
         val esYoutube = senalActual is Senal.DeYoutube && !fallaronTodas
 
         // El reproductor de siempre: solo cuando NO es YouTube. Si quedara debajo,
@@ -352,30 +390,14 @@ fun Reproductor(
             )
         }
 
-        // Si la señal actual es de YouTube, se muestra su reproductor.
-        // key(...) hace que se cree uno nuevo para cada señal y cada reintento.
-        if (senalActual is Senal.DeYoutube && !fallaronTodas) {
-            key(senalActual, ronda) {
-                ReproductorYoutube(
-                    senal = senalActual,
-                    onEvento = { evento, dato ->
-                        // Traducimos los avisos de YouTube a los mismos estados del otro reproductor,
-                        // así el vigilante y el respaldo automático funcionan igual.
-                        when (evento) {
-                            "error" -> {
-                                error = "YouTube: error $dato"
-                                fallos++
-                            }
-                            "estado" -> when (dato) {
-                                "1" -> estadoReproductor = Player.STATE_READY       // reproduciendo
-                                "3" -> estadoReproductor = Player.STATE_BUFFERING   // cargando
-                                "0" -> estadoReproductor = Player.STATE_ENDED       // terminó
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+        // Si la señal actual es de YouTube, se ve en su propia pantalla. Acá, un aviso.
+        if (esYoutube) {
+            Text(
+                "▶ ${canal.nombre} se ve con YouTube",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
+                modifier = Modifier.align(Alignment.Center),
+            )
         }
 
         // El cartel no se muestra mientras la lista está abierta.
