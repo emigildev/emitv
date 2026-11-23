@@ -1,6 +1,10 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T04:31:51.498Z",
+  "actualizado": "2026-11-23T05:00:33.554Z",
+  "fuentes": {
+    "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
+    "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
+  },
   "simple": [
     {
       "tipo": "xtream",
@@ -72,6 +76,13 @@
       "original": "AR | Telefe 1"
     },
     {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "Encuentro.ar@SD",
+      "nombre": "Encuentro",
+      "logo": "https://i.imgur.com/uBBZR1X.png"
+    },
+    {
       "tipo": "xtream",
       "id": 130639,
       "nombre": "El Trece",
@@ -85,9 +96,78 @@
     },
     {
       "tipo": "xtream",
+      "id": 355121,
+      "nombre": "Argentinisima Satelital",
+      "original": "Argentinisima Satelital | AR"
+    },
+    {
+      "tipo": "xtream",
       "id": 130651,
       "nombre": "TyC Sports",
       "original": "AR | 7yc Sp0rts Ar"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130653,
+      "nombre": "ESPN 1",
+      "original": "AR*E$Pñ**1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130654,
+      "nombre": "ESPN 2",
+      "original": "AR**E$Pñ*2"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130656,
+      "nombre": "ESPN 3",
+      "original": "AR**E€pñ**3"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130657,
+      "nombre": "ESPN 4",
+      "original": "AR**E$PÑ**4"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130648,
+      "nombre": "ESPN Premium",
+      "original": "AR |**Premium**OPC. 1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 355130,
+      "nombre": "Canal 22",
+      "original": "Canal 22 Buenos Aires | AR"
+    },
+    {
+      "tipo": "xtream",
+      "id": 379757,
+      "nombre": "Telesur",
+      "original": "VENEZUELA | Telesur"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.5RT________",
+      "nombre": "RT Noticias",
+      "logo": "https://radiosargentina.com.ar/png/VI----RT.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.6CANAL-E___",
+      "nombre": "Canal E",
+      "logo": "https://radiosargentina.com.ar/png/VICANALE.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "Canal26.ar@SD",
+      "nombre": "Canal 26",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Canal_26_logo_%282022%29.svg/500px-Canal_26_logo_%282022%29.svg.png"
     }
   ],
   "completa": [
@@ -174,6 +254,94 @@
       "id": 130651,
       "nombre": "TyC Sports",
       "original": "AR | 7yc Sp0rts Ar"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "Encuentro.ar@SD",
+      "nombre": "Encuentro",
+      "logo": "https://i.imgur.com/uBBZR1X.png"
+    },
+    {
+      "tipo": "xtream",
+      "id": 355121,
+      "nombre": "Argentinisima Satelital AR",
+      "original": "Argentinisima Satelital | AR"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130653,
+      "nombre": "AREPñ1",
+      "original": "AR*E$Pñ**1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130654,
+      "nombre": "AREPñ2",
+      "original": "AR**E$Pñ*2"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130656,
+      "nombre": "AREpñ3",
+      "original": "AR**E€pñ**3"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130657,
+      "nombre": "AREPÑ4",
+      "original": "AR**E$PÑ**4"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130645,
+      "nombre": "AR T n t Sp0rts 1",
+      "original": "AR | T n t Sp0rts 1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130646,
+      "nombre": "AR T n t Sp0rts 2",
+      "original": "AR | T n t Sp0rts 2"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130648,
+      "nombre": "AR PremiumOPC. 1",
+      "original": "AR |**Premium**OPC. 1"
+    },
+    {
+      "tipo": "xtream",
+      "id": 355130,
+      "nombre": "Canal 22 Buenos Aires AR",
+      "original": "Canal 22 Buenos Aires | AR"
+    },
+    {
+      "tipo": "xtream",
+      "id": 379757,
+      "nombre": "VENEZUELA Telesur",
+      "original": "VENEZUELA | Telesur"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.5RT________",
+      "nombre": "RT - 25.5TV - CABA TV TDA - CD Cd Aut Bs As",
+      "logo": "https://radiosargentina.com.ar/png/VI----RT.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.6CANAL-E___",
+      "nombre": "Canal-E - 25.6TV - CABA TV TDA - CD Cd Aut Bs As",
+      "logo": "https://radiosargentina.com.ar/png/VICANALE.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "Canal26.ar@SD",
+      "nombre": "Canal 26",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Canal_26_logo_%282022%29.svg/500px-Canal_26_logo_%282022%29.svg.png"
     }
   ]
 }
