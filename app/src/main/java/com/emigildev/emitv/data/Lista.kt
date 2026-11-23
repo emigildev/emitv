@@ -92,9 +92,12 @@ private val NO_ALFANUMERICO = Regex("[^a-z0-9]+")
 private val ESPACIOS = Regex("\\s+")
 private val NUMERO_VERSION = Regex("\\s[1-3]$")
 
+private val ENTRE_PARENTESIS = Regex("[\\[(][^\\])]*[\\])]")
+
 /** "AR | Telefe FHD [Backup]" -> "telefe"  ·  "AR | A 24 2" -> "a24" */
 fun claveBase(nombre: String): String {
-    var texto = Normalizer.normalize(limpiar(nombre), Normalizer.Form.NFKD)
+    // Fuera lo que va entre paréntesis o corchetes: "(720p)", "[Not 24/7]", "[Geo-blocked]"…
+    var texto = Normalizer.normalize(limpiar(nombre.replace(ENTRE_PARENTESIS, " ")), Normalizer.Form.NFKD)
         .replace(ACENTOS, "")
         .lowercase()
         .replace(NO_ALFANUMERICO, " ")

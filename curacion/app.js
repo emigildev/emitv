@@ -125,7 +125,8 @@ const PREFIJO_PAIS = /^\s*[a-z]{2,3}\s*[|:]/i;
 
 // "AR | Telefe FHD [Backup]" -> "telefe"  ·  "AR | A 24 2" -> "a24"  ·  "ESPN 2 HD" -> "espn2"
 function claveBase(nombre) {
-  let texto = limpiar(nombre)
+  // Fuera lo que va entre paréntesis o corchetes: "(720p)", "[Not 24/7]", "[Geo-blocked]"…
+  let texto = limpiar(String(nombre ?? "").replace(/[\[(][^\])]*[\])]/g, " "))
     .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")  // letras "con estilo" -> normales, y sin acentos
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")                         // todo lo que no sea letra o número -> espacio
@@ -140,6 +141,29 @@ function claveBase(nombre) {
   }
 
   return texto.replace(/\s/g, "");  // sin espacios: "a 24" = "a24"
+}
+
+// ¿Dos claves son "el mismo canal"? Iguales, o una empieza con la otra:
+// "argentinisima" y "argentinisimasatelital". Con un mínimo de 5 letras,
+// para que "tn" no se confunda con "tnt".
+function clavesParecidas(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const [corta, larga] = a.length <= b.length ? [a, b] : [b, a];
+  return corta.length >= 5 && larga.startsWith(corta);
+}
+
+// Clave base de un canal "de vista" (catálogo o M3U). Se recuerda para no recalcularla:
+// un WeakMap guarda un dato extra por objeto, y se libera solo si el objeto desaparece.
+const clavesCacheadas = new WeakMap();
+
+function claveDeVista(canal) {
+  const objeto = canal.m3u ?? canal;
+  if (!clavesCacheadas.has(objeto)) {
+    const nombre = canal.m3u ? canal.m3u.nombre : canal.name;
+    clavesCacheadas.set(objeto, claveBase(nombreCorto(nombre)));
+  }
+  return clavesCacheadas.get(objeto);
 }
 
 // Agrupa todo el catálogo por clave base.
@@ -159,44 +183,27 @@ function nombreCorto(nombre) {
   return String(nombre ?? "").split(" - ")[0];
 }
 
-// Índice de las entradas M3U por clave base. Se recalcula solo si cambiaron las entradas.
-let indiceM3u = { entradas: null, mapa: new Map() };
-
-function gruposM3u() {
-  if (indiceM3u.entradas !== entradasM3u) {
-    const mapa = new Map();
-    for (const entrada of entradasM3u) {
-      const clave = claveBase(nombreCorto(entrada.nombre));
-      if (!clave) continue;
-      if (!mapa.has(clave)) mapa.set(clave, []);
-      mapa.get(clave).push(entrada);
-    }
-    indiceM3u = { entradas: entradasM3u, mapa };
-  }
-  return indiceM3u.mapa;
+// Las claves base con las que se puede reconocer el canal de un ítem de tu lista.
+function clavesDeItem(item) {
+  const nombres = item.tipo === "m3u"
+    ? [buscarEntrada(item.fuente, item.clave)?.nombre, item.nombre]
+    : [buscarCanal(item.id)?.name, item.original, item.nombre];
+  return [...new Set(nombres.filter(Boolean).map(n => claveBase(nombreCorto(n))).filter(Boolean))];
 }
 
 // Versiones parecidas del canal de un ítem, en TODAS las fuentes (sin incluir su principal).
 // Devuelve canales "de vista", como los del catálogo.
 function similaresDe(item) {
-  const nombres = item.tipo === "m3u"
-    ? [buscarEntrada(item.fuente, item.clave)?.nombre, item.nombre]
-    : [buscarCanal(item.id)?.name, item.original, item.nombre];
-  const claves = new Set(nombres.filter(Boolean).map(n => claveBase(nombreCorto(n))).filter(Boolean));
-
-  const encontrados = [];
-  for (const clave of claves) {
-    encontrados.push(...(grupos.get(clave) ?? []));
-    encontrados.push(...(gruposM3u().get(clave) ?? []).map(comoCanal));
-  }
-
-  // Sin el principal y sin repetidos
+  const claves = clavesDeItem(item);
+  if (claves.length === 0) return [];
   const principal = refDeItem(item);
   const vistos = new Set();
-  return encontrados.filter(canal => {
+  return [...canales, ...entradasM3u.map(comoCanal)].filter(canal => {
+    const clave = claveDeVista(canal);
+    if (!claves.some(c => clavesParecidas(c, clave))) return false;
     const ref = refDeVista(canal);
     const texto = textoRef(ref);
-    if (vistos.has(texto) || mismaRef(ref, principal)) return false;
+    if (vistos.has(texto) || mismaRef(ref, principal)) return false;  // sin repetidos ni el principal
     vistos.add(texto);
     return true;
   });
@@ -574,6 +581,9 @@ function refrescarCanales() {
   const ul = document.getElementById("lista-canales");
   ul.innerHTML = "";
 
+  // Claves de los canales de la lista que estás viendo (para sugerir "+ Respaldo de…")
+  const clavesLista = listas[listaActiva].map(item => ({ item, claves: clavesDeItem(item) }));
+
   for (const canal of lista) {
     const li = document.createElement("li");
 
@@ -602,6 +612,16 @@ function refrescarCanales() {
           ya,
         ),
       );
+    }
+
+    // Si se parece a un canal de tu lista, ofrecer agregarlo como su respaldo
+    const ref = refDeVista(canal);
+    if (!estaEnLista(listaActiva, ref)) {
+      const clave = claveDeVista(canal);
+      const parecido = clavesLista.find(({ claves }) => claves.some(c => clavesParecidas(c, clave)));
+      if (parecido) {
+        acciones.append(crearBoton(`+ Respaldo de ${parecido.item.nombre}`, () => agregarRespaldo(parecido.item, ref)));
+      }
     }
 
     li.append(crearLogo(canal.stream_icon), nombre, detalle, acciones);
