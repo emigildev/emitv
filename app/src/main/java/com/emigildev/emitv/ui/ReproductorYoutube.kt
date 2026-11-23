@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.emigildev.emitv.data.Senal
+import android.view.View
 
 /** La página del reproductor de YouTube, publicada en tu GitHub Pages. */
 private const val URL_REPRODUCTOR_YOUTUBE = "https://emigildev.github.io/emitv/reproductor/youtube.html"
@@ -61,6 +62,9 @@ fun ReproductorYoutube(
                 settings.domStorageEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = false   // que arranque solo, con sonido
                 setBackgroundColor(android.graphics.Color.BLACK)
+                // Dibujar la página (video incluido) en una capa propia: evita que en algunas
+                // TVs el video quede "detrás" de la app y se vea negro.
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
                 // El foco y las teclas del control los maneja la app, no la página.
                 isFocusable = false

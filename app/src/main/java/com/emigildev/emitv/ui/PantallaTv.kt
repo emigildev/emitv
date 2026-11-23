@@ -335,18 +335,25 @@ fun Reproductor(
             .focusRequester(foco)
             .focusable()
     ) {
-        AndroidView(
-            factory = { ctx ->
-                val vista = LayoutInflater.from(ctx).inflate(R.layout.reproductor, null) as PlayerView
-                vista.player = player
-                vista
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        // Si la señal actual es de YouTube, su reproductor va encima del de siempre.
-        // key(...) hace que se cree uno nuevo para cada señal y cada reintento.
+        // La señal que se está usando ahora.
         val senalActual = senales.getOrNull(intento)
+        val esYoutube = senalActual is Senal.DeYoutube && !fallaronTodas
+
+        // El reproductor de siempre: solo cuando NO es YouTube. Si quedara debajo,
+        // en algunas TVs tapa el video de YouTube (se escucha pero no se ve).
+        if (!esYoutube) {
+            AndroidView(
+                factory = { ctx ->
+                    val vista = LayoutInflater.from(ctx).inflate(R.layout.reproductor, null) as PlayerView
+                    vista.player = player
+                    vista
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        // Si la señal actual es de YouTube, se muestra su reproductor.
+        // key(...) hace que se cree uno nuevo para cada señal y cada reintento.
         if (senalActual is Senal.DeYoutube && !fallaronTodas) {
             key(senalActual, ronda) {
                 ReproductorYoutube(
