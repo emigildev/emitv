@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T22:17:17.504Z",
+  "actualizado": "2026-11-23T22:21:55.479Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -450,6 +450,120 @@
       "id": 379529,
       "nombre": "Discovery World",
       "original": "Cult: Discovery World 1080p"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377876,
+      "nombre": "HBO",
+      "original": "HBO"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377877,
+      "nombre": "HBO 2",
+      "original": "HBO 2"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377878,
+      "nombre": "HBO PLUS",
+      "original": "HBO PLUS"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377879,
+      "nombre": "HBO XTREME",
+      "original": "HBO XTREME"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377880,
+      "nombre": "HBO ZONE",
+      "original": "HBO ZONE"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377881,
+      "nombre": "HBO POP",
+      "original": "HBO POP"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377882,
+      "nombre": "HBO SIGNATURE",
+      "original": "HBO SIGNATURE"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377884,
+      "nombre": "AMC",
+      "original": "AMC"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377885,
+      "nombre": "AXN",
+      "original": "AXN"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377886,
+      "nombre": "CINECANAL",
+      "original": "CINECANAL"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377887,
+      "nombre": "CINEMAX",
+      "original": "CINEMAX"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377891,
+      "nombre": "DE PELICULA",
+      "original": "DE PELICULA"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377899,
+      "nombre": "Paramount",
+      "original": "Paramount"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377901,
+      "nombre": "SONY CINE",
+      "original": "SONY CINE"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377904,
+      "nombre": "SPACE",
+      "original": "SPACE"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377905,
+      "nombre": "STAR CHANNEL",
+      "original": "STAR CHANNEL"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377914,
+      "nombre": "TNT",
+      "original": "TNT"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377916,
+      "nombre": "UNIVERSAL CINEMA",
+      "original": "UNIVERSAL CINEMA"
+    },
+    {
+      "tipo": "xtream",
+      "id": 377925,
+      "nombre": "SONY MOVIES",
+      "original": "SONY MOVIES"
     }
   ],
   "completa": [
