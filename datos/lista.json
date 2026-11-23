@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T17:42:22.891Z",
+  "actualizado": "2026-11-23T20:10:49.287Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -64,10 +64,10 @@
       "original": "AR | El nueve 1"
     },
     {
-      "tipo": "xtream",
-      "id": 355104,
-      "nombre": "Neo TV",
-      "original": "Neo TV ✪ | AR"
+      "tipo": "youtube",
+      "video": "9WaixaxSzIY",
+      "nombre": "Canal 10",
+      "logo": "https://i.ytimg.com/vi/9WaixaxSzIY/hqdefault.jpg"
     },
     {
       "tipo": "xtream",
@@ -76,11 +76,10 @@
       "original": "AR | Telefe 1"
     },
     {
-      "tipo": "m3u",
-      "fuente": "iptv-org",
-      "clave": "Encuentro.ar@SD",
-      "nombre": "Encuentro",
-      "logo": "https://i.imgur.com/uBBZR1X.png"
+      "tipo": "youtube",
+      "video": "nndzeKDSjuc",
+      "nombre": "El Doce",
+      "logo": "https://i.ytimg.com/vi/nndzeKDSjuc/hqdefault.jpg"
     },
     {
       "tipo": "xtream",
@@ -89,10 +88,11 @@
       "original": "AR | El trece 1"
     },
     {
-      "tipo": "xtream",
-      "id": 130635,
-      "nombre": "TN",
-      "original": "AR | Tn 1"
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "Encuentro.ar@SD",
+      "nombre": "Encuentro",
+      "logo": "https://i.imgur.com/uBBZR1X.png"
     },
     {
       "tipo": "xtream",
@@ -113,10 +113,140 @@
       ]
     },
     {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "FolcloreandoTV.ar@SD",
+      "nombre": "Folcloreando TV",
+      "logo": "https://folcloreando.com/wp-content/uploads/elementor/thumbs/logo-qvcz16ulfxe7qqvftihvlcoku8l2hux59qcndiy3qo.png"
+    },
+    {
+      "tipo": "youtube",
+      "video": "tInHlI4KdmQ",
+      "nombre": "El Destape",
+      "logo": "https://i.ytimg.com/vi/tInHlI4KdmQ/hqdefault.jpg"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130635,
+      "nombre": "TN",
+      "original": "AR | Tn 1",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TN.ar@SD"
+        },
+        130636
+      ]
+    },
+    {
+      "tipo": "xtream",
+      "id": 379757,
+      "nombre": "Telesur",
+      "original": "VENEZUELA | Telesur",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.4TELESUR___"
+        }
+      ]
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.5RT________",
+      "nombre": "RT Noticias",
+      "logo": "https://radiosargentina.com.ar/png/VI----RT.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.6CANAL-E___",
+      "nombre": "Canal E",
+      "logo": "https://radiosargentina.com.ar/png/VICANALE.png",
+      "respaldos": [
+        355161
+      ]
+    },
+    {
+      "tipo": "xtream",
+      "id": 355130,
+      "nombre": "Canal 22",
+      "original": "Canal 22 Buenos Aires | AR",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "Canal22.ar@SD"
+        }
+      ]
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__15.4GENTV_____",
+      "nombre": "GenTV",
+      "logo": "https://radiosargentina.com.ar/png/VI-GENTV.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__27.1BRAVOTV___",
+      "nombre": "Bravo TV",
+      "logo": "https://radiosargentina.com.ar/png/VI-BRAVO.png",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "BravoTV.ar@SD"
+        }
+      ]
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "ChamameTV.ar@SD",
+      "nombre": "Chamame TV",
+      "logo": "https://i.imgur.com/JigzJck.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "Canal26.ar@SD",
+      "nombre": "Canal 26",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Canal_26_logo_%282022%29.svg/500px-Canal_26_logo_%282022%29.svg.png",
+      "respaldos": [
+        130584,
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__26.1CANAL26___"
+        }
+      ]
+    },
+    {
       "tipo": "xtream",
       "id": 130651,
       "nombre": "TyC Sports",
-      "original": "AR | 7yc Sp0rts Ar"
+      "original": "AR | 7yc Sp0rts Ar",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TyCSports.ar@SD"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA_____CTYCSPORTS_"
+        }
+      ]
     },
     {
       "tipo": "xtream",
@@ -173,58 +303,106 @@
     },
     {
       "tipo": "xtream",
-      "id": 355130,
-      "nombre": "Canal 22",
-      "original": "Canal 22 Buenos Aires | AR"
+      "id": 130658,
+      "nombre": "FOX Sports 1",
+      "original": "*F0X*SP0R7S*1* AR"
     },
     {
       "tipo": "xtream",
-      "id": 379757,
-      "nombre": "Telesur",
-      "original": "VENEZUELA | Telesur"
+      "id": 130660,
+      "nombre": "FOX Sports 2",
+      "original": "**F0X**SP0R7S**2**AR"
     },
     {
-      "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.5RT________",
-      "nombre": "RT Noticias",
-      "logo": "https://radiosargentina.com.ar/png/VI----RT.png"
+      "tipo": "xtream",
+      "id": 130661,
+      "nombre": "FOX Sports 3",
+      "original": "+*F0X**SP0R7S* 3 AR"
     },
     {
-      "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.6CANAL-E___",
-      "nombre": "Canal E",
-      "logo": "https://radiosargentina.com.ar/png/VICANALE.png",
+      "tipo": "xtream",
+      "id": 130662,
+      "nombre": "DirectTV Sports 1",
+      "original": "AR |**D3 tv*1 Ar"
+    },
+    {
+      "tipo": "xtream",
+      "id": 130663,
+      "nombre": "DirectTV Sports 2",
+      "original": "AR |**D3*tv*2"
+    },
+    {
+      "tipo": "xtream",
+      "id": 243281,
+      "nombre": "Volver",
+      "original": "AR | VOLVER",
       "respaldos": [
-        355161
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "Volver.ar@SD"
+        }
       ]
     },
     {
-      "tipo": "m3u",
-      "fuente": "iptv-org",
-      "clave": "Canal26.ar@SD",
-      "nombre": "Canal 26",
-      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Canal_26_logo_%282022%29.svg/500px-Canal_26_logo_%282022%29.svg.png"
+      "tipo": "xtream",
+      "id": 253737,
+      "nombre": "CINE.AR",
+      "original": "AR | CINE AR"
     },
     {
-      "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___",
-      "nombre": "Canal 22 - WebTV - CABA TV Web - CD Cd Aut Bs As",
-      "logo": "https://radiosargentina.com.ar/png/VI---C22.png"
+      "tipo": "xtream",
+      "id": 364377,
+      "nombre": "History Channel",
+      "original": "HISTORY ʜᴅ"
     },
     {
-      "tipo": "youtube",
-      "video": "tInHlI4KdmQ",
-      "nombre": "El Destape",
-      "logo": "https://i.ytimg.com/vi/tInHlI4KdmQ/hqdefault.jpg"
+      "tipo": "xtream",
+      "id": 379535,
+      "nombre": "History Channel 2",
+      "original": "Cult: H2 1080p"
     },
     {
-      "tipo": "youtube",
-      "video": "9WaixaxSzIY",
-      "nombre": "Canal 10",
-      "logo": "https://i.ytimg.com/vi/9WaixaxSzIY/hqdefault.jpg"
+      "tipo": "xtream",
+      "id": 364357,
+      "nombre": "Discovery Channel",
+      "original": "Discovery Channel ᴴᴰ"
+    },
+    {
+      "tipo": "xtream",
+      "id": 364354,
+      "nombre": "Animal Planet",
+      "original": "ANIMAL Planet HD"
+    },
+    {
+      "tipo": "xtream",
+      "id": 379519,
+      "nombre": "Discovery Home and Health",
+      "original": "Cult: Discovery Home and Health 1080p"
+    },
+    {
+      "tipo": "xtream",
+      "id": 379523,
+      "nombre": "Discovery Science",
+      "original": "Cult: Discovery Science 1080p"
+    },
+    {
+      "tipo": "xtream",
+      "id": 379526,
+      "nombre": "Discovery Theater",
+      "original": "Cult: Discovery Theater 480p"
+    },
+    {
+      "tipo": "xtream",
+      "id": 379527,
+      "nombre": "Discovery Turbo",
+      "original": "Cult: Discovery Turbo 1080p"
+    },
+    {
+      "tipo": "xtream",
+      "id": 379529,
+      "nombre": "Discovery World",
+      "original": "Cult: Discovery World 1080p"
     }
   ],
   "completa": [
@@ -345,22 +523,10 @@
       ]
     },
     {
-      "tipo": "xtream",
-      "id": 355104,
-      "nombre": "Neo TV",
-      "original": "Neo TV ✪ | AR",
-      "respaldos": [
-        {
-          "tipo": "m3u",
-          "fuente": "iptv-org",
-          "clave": "NeoTV.ar@SD"
-        },
-        {
-          "tipo": "m3u",
-          "fuente": "ariptv",
-          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARGBFLORE__16.1NEOTV_____"
-        }
-      ]
+      "tipo": "youtube",
+      "video": "9WaixaxSzIY",
+      "nombre": "Canal 10",
+      "logo": "https://i.ytimg.com/vi/9WaixaxSzIY/hqdefault.jpg"
     },
     {
       "tipo": "xtream",
@@ -383,6 +549,12 @@
       ]
     },
     {
+      "tipo": "youtube",
+      "video": "tInHlI4KdmQ",
+      "nombre": "El Destape",
+      "logo": "https://i.ytimg.com/vi/tInHlI4KdmQ/hqdefault.jpg"
+    },
+    {
       "tipo": "xtream",
       "id": 130639,
       "nombre": "El trece",
@@ -393,44 +565,6 @@
           "tipo": "m3u",
           "fuente": "iptv-org",
           "clave": "ElTrece.ar@SD"
-        }
-      ]
-    },
-    {
-      "tipo": "xtream",
-      "id": 130635,
-      "nombre": "TN",
-      "original": "AR | Tn 1",
-      "respaldos": [
-        {
-          "tipo": "m3u",
-          "fuente": "iptv-org",
-          "clave": "TN.ar@SD"
-        },
-        130636
-      ]
-    },
-    {
-      "tipo": "youtube",
-      "video": "tInHlI4KdmQ",
-      "nombre": "El Destape",
-      "logo": "https://i.ytimg.com/vi/tInHlI4KdmQ/hqdefault.jpg"
-    },
-    {
-      "tipo": "xtream",
-      "id": 130651,
-      "nombre": "TyC Sports",
-      "original": "AR | 7yc Sp0rts Ar",
-      "respaldos": [
-        {
-          "tipo": "m3u",
-          "fuente": "ariptv",
-          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA_____CTYCSPORTS_"
-        },
-        {
-          "tipo": "m3u",
-          "fuente": "iptv-org",
-          "clave": "TyCSports.ar@SD"
         }
       ]
     },
@@ -456,6 +590,38 @@
           "tipo": "m3u",
           "fuente": "iptv-org",
           "clave": "ArgentinisimaSatelital.ar@SD"
+        }
+      ]
+    },
+    {
+      "tipo": "xtream",
+      "id": 130635,
+      "nombre": "TN",
+      "original": "AR | Tn 1",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TN.ar@SD"
+        },
+        130636
+      ]
+    },
+    {
+      "tipo": "xtream",
+      "id": 130651,
+      "nombre": "TyC Sports",
+      "original": "AR | 7yc Sp0rts Ar",
+      "respaldos": [
+        {
+          "tipo": "m3u",
+          "fuente": "ariptv",
+          "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA_____CTYCSPORTS_"
+        },
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "TyCSports.ar@SD"
         }
       ]
     },
@@ -578,9 +744,42 @@
     },
     {
       "tipo": "youtube",
-      "video": "9WaixaxSzIY",
-      "nombre": "Canal 10",
-      "logo": "https://i.ytimg.com/vi/9WaixaxSzIY/hqdefault.jpg"
+      "video": "nndzeKDSjuc",
+      "nombre": "El Doce",
+      "logo": "https://i.ytimg.com/vi/nndzeKDSjuc/hqdefault.jpg"
+    },
+    {
+      "tipo": "xtream",
+      "id": 243281,
+      "nombre": "AR VOLVER",
+      "original": "AR | VOLVER"
+    },
+    {
+      "tipo": "xtream",
+      "id": 253737,
+      "nombre": "AR CINE AR",
+      "original": "AR | CINE AR"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__15.4GENTV_____",
+      "nombre": "GenTV",
+      "logo": "https://radiosargentina.com.ar/png/VI-GENTV.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__27.1BRAVOTV___",
+      "nombre": "Bravo TV",
+      "logo": "https://radiosargentina.com.ar/png/VI-BRAVO.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "ChamameTV.ar@SD",
+      "nombre": "Chamame TV",
+      "logo": "https://i.imgur.com/JigzJck.png"
     }
   ]
 }
