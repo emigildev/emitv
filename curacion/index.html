@@ -2,74 +2,116 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1115">
   <title>EmiTV · Curación</title>
   <link rel="stylesheet" href="estilos.css">
 </head>
-<body>
-  <header>
-    <h1>EmiTV · Curación</h1>
+<body data-vista="lista">
+
+  <!-- Barra superior: siempre visible -->
+  <header class="barra-superior">
+    <div class="marca">
+      <span class="logo">EmiTV</span>
+      <span class="subtitulo">Curación</span>
+    </div>
+    <div class="acciones-globales">
+      <span id="indicador-pendiente" class="pildora" hidden>● Sin publicar</span>
+      <button id="boton-publicar" class="primario">⬆ Publicar</button>
+    </div>
   </header>
 
-  <section id="carga">
-    <h2>1. Cargar el catálogo</h2>
-    <label>Categorías: <input type="file" id="archivo-categorias" accept=".json"></label>
-    <label>Canales: <input type="file" id="archivo-canales" accept=".json"></label>
-    <p id="estado-carga">Todavía no cargaste nada.</p>
-  </section>
-
-    <section id="github">
-    <h2>2. GitHub</h2>
-    <div class="herramientas">
-      <input type="password" id="campo-token" autocomplete="off">
-      <button id="boton-guardar-token">Guardar token</button>
-      <button id="boton-olvidar-token">Olvidar token</button>
-    </div>
-    <div class="herramientas">
-      <button id="boton-traer">⬇ Traer de GitHub</button>
-      <button id="boton-publicar">⬆ Publicar en GitHub</button>
-    </div>
-    <p id="estado-github"></p>
-    </section>
-
-    <section id="servidor">
-    <h2>3. Servidor del proveedor</h2>
-    <p class="ayuda">Si el proveedor cambia de dirección, cambiala acá: todas las TVs la toman al abrir la app.</p>
-    <div class="herramientas">
-      <input type="url" id="campo-servidor" placeholder="https://miservidor.com">
-      <button id="boton-traer-servidor">⬇ Traer servidor</button>
-      <button id="boton-publicar-servidor">⬆ Publicar servidor</button>
-    </div>
-    <p id="estado-servidor"></p>
-    </section>
+  <!-- Navegación: abajo en el celular, arriba en la PC -->
+  <nav class="navegacion">
+    <button class="nav-boton" data-ir="lista"><span class="nav-icono">📺</span><span>Mi lista</span></button>
+    <button class="nav-boton" data-ir="catalogo"><span class="nav-icono">🔎</span><span>Catálogo</span></button>
+    <button class="nav-boton" data-ir="ajustes"><span class="nav-icono">⚙️</span><span>Ajustes</span></button>
+  </nav>
 
   <main id="explorador">
-    <aside>
-      <h2>Categorías</h2>
-      <ul id="lista-categorias"></ul>
-    </aside>
 
-    <section>
+    <!-- ========== Catálogo ========== -->
+    <section id="vista-catalogo" class="vista tarjeta">
+      <h2>Catálogo</h2>
       <input type="search" id="buscador" placeholder="Buscar canal en todo el catálogo…">
-      <h2 id="titulo-canales">Elegí una categoría</h2>
-      <ul id="lista-canales"></ul>
+      <select id="selector-categorias">
+        <option value="">Elegí una categoría…</option>
+      </select>
+      <div class="catalogo-cuerpo">
+        <ul id="lista-categorias"></ul>
+        <div class="catalogo-canales">
+          <h3 id="titulo-canales">Elegí una categoría</h3>
+          <ul id="lista-canales"></ul>
+        </div>
+      </div>
     </section>
 
-    <section id="panel-lista">
-      <h2>Tu lista</h2>
-      <div class="pestanas">
-        <button id="pestana-simple" class="pestana"></button>
-        <button id="pestana-completa" class="pestana"></button>
-      </div>
-      <div class="herramientas">
-        <button id="boton-exportar">Exportar lista.json</button>
-        <button id="boton-importar">Importar lista.json</button>
-        <input type="file" id="archivo-importar" accept=".json" hidden>
+    <!-- ========== Mi lista ========== -->
+    <section id="vista-lista" class="vista tarjeta">
+      <div class="encabezado-lista">
+        <h2>Mi lista</h2>
+        <div class="pestanas">
+          <button id="pestana-simple" class="pestana"></button>
+          <button id="pestana-completa" class="pestana"></button>
+        </div>
       </div>
       <ul id="avisos"></ul>
       <ul id="mi-lista"></ul>
     </section>
+
+    <!-- ========== Ajustes ========== -->
+    <section id="vista-ajustes" class="vista">
+
+      <div class="tarjeta">
+        <h2>Catálogo del proveedor</h2>
+        <p class="ayuda">Cargá los archivos descargados de tu servicio para poder agregar canales.</p>
+        <label class="campo-archivo">Categorías <input type="file" id="archivo-categorias" accept=".json"></label>
+        <label class="campo-archivo">Canales <input type="file" id="archivo-canales" accept=".json"></label>
+        <p id="estado-carga" class="estado">Todavía no cargaste nada.</p>
+      </div>
+
+      <div class="tarjeta">
+        <h2>GitHub</h2>
+        <p class="ayuda">El token se guarda solo en este navegador.</p>
+        <div class="fila">
+          <input type="password" id="campo-token" class="campo" autocomplete="off">
+          <button id="boton-guardar-token">Guardar</button>
+          <button id="boton-olvidar-token">Olvidar</button>
+        </div>
+        <div class="fila">
+          <button id="boton-traer">⬇ Traer lista de GitHub</button>
+        </div>
+        <p id="estado-github" class="estado"></p>
+      </div>
+
+      <div class="tarjeta tarjeta-peligro">
+        <h2>Servidor del proveedor</h2>
+        <p class="ayuda">Si el proveedor cambia de dirección, cambiala acá: todas las TVs la toman al abrir la app.</p>
+        <div class="fila">
+          <input type="url" id="campo-servidor" class="campo" placeholder="https://miservidor.com">
+        </div>
+        <div class="fila">
+          <button id="boton-traer-servidor">⬇ Traer</button>
+          <button id="boton-publicar-servidor" class="peligro">⬆ Publicar servidor</button>
+        </div>
+        <p id="estado-servidor" class="estado"></p>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Archivo</h2>
+        <p class="ayuda">Copia de seguridad de tus listas en un archivo.</p>
+        <div class="fila">
+          <button id="boton-exportar">Exportar lista.json</button>
+          <button id="boton-importar">Importar lista.json</button>
+          <input type="file" id="archivo-importar" accept=".json" hidden>
+        </div>
+      </div>
+
+    </section>
   </main>
+
+  <!-- Mensaje flotante (aparece unos segundos) -->
+  <div id="notificacion" role="status" hidden></div>
 
   <script src="app.js"></script>
 </body>

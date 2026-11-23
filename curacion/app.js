@@ -18,6 +18,7 @@ let panelesAbiertos = new Set();
 const NOMBRES_LISTA = { simple: "Simple", completa: "Completa" };
 const CLAVE_GUARDADO = "emitv-listas";
 const CLAVE_CATALOGO = "emitv-catalogo";
+const CLAVE_PENDIENTE = "emitv-pendiente";
 
 // ================= Utilidades =================
 
@@ -143,6 +144,17 @@ function cargarLocal() {
   }
 }
 
+// ¿Hay cambios en tus listas que todavía no se publicaron en GitHub?
+// Se guarda en el navegador, así el aviso sigue aunque cierres la pestaña.
+function marcarPendiente(hay) {
+  localStorage.setItem(CLAVE_PENDIENTE, hay ? "1" : "");
+  document.getElementById("indicador-pendiente").hidden = !hay;
+}
+
+function hayPendiente() {
+  return localStorage.getItem(CLAVE_PENDIENTE) === "1";
+}
+
 // Guarda una copia LIVIANA del catálogo: solo los campos que usamos.
 function guardarCatalogo() {
   const liviano = {
@@ -197,7 +209,7 @@ function agregar(nombreLista, canal) {
     original: canal.name,
     respaldos: [],
   });
-  actualizar();
+  huboCambio();
 }
 
 // Marca o desmarca un canal como respaldo de un ítem.
@@ -209,13 +221,13 @@ function alternarRespaldo(item, id) {
   } else {
     item.respaldos.push(Number(id));
   }
-  actualizar();
+  huboCambio();
 }
 
 // Todas las versiones similares pasan a ser respaldos.
 function usarTodosComoRespaldo(item) {
   item.respaldos = similares(item.id).map(c => Number(c.stream_id));
-  actualizar();
+  huboCambio();
 }
 
 // Intercambia: el respaldo pasa a ser el principal y el principal, el primer respaldo.
@@ -228,7 +240,7 @@ function hacerPrincipal(item, id) {
   item.original = buscarCanal(id)?.name ?? item.original;
   // Mantener abierto el panel aunque cambió el id
   if (panelesAbiertos.delete(claveAnterior)) panelesAbiertos.add(`${listaActiva}:${item.id}`);
-  actualizar();
+  huboCambio();
 }
 
 function alternarPanel(item) {
@@ -240,7 +252,7 @@ function alternarPanel(item) {
 
 function quitar(indice) {
   listas[listaActiva].splice(indice, 1);  // borra 1 elemento en esa posición
-  actualizar();
+  huboCambio();
 }
 
 function mover(indice, paso) {
@@ -249,7 +261,7 @@ function mover(indice, paso) {
   if (destino < 0 || destino >= lista.length) return;
   // Intercambio en una línea (desestructuración):
   [lista[indice], lista[destino]] = [lista[destino], lista[indice]];
-  actualizar();
+  huboCambio();
 }
 
 function renombrar(indice, nuevoNombre) {
@@ -258,10 +270,11 @@ function renombrar(indice, nuevoNombre) {
   if (limpio) {
     item.nombre = limpio;
     guardarLocal();  // sin redibujar, para no sacarte el foco del campo
+    marcarPendiente(true);
   } else {
     // Nombre vacío: volver al original del catálogo
     item.nombre = limpiar(buscarCanal(item.id)?.name ?? `Canal ${item.id}`);
-    actualizar();
+    huboCambio();
   }
 }
 
@@ -270,9 +283,15 @@ function cambiarLista(nombreLista) {
   actualizar();
 }
 
-// Después de cualquier cambio: guardar y redibujar todo lo que depende de las listas.
-function actualizar() {
+// Después de un cambio TUYO en las listas: guardar, marcar "sin publicar" y redibujar.
+function huboCambio() {
   guardarLocal();
+  marcarPendiente(true);
+  actualizar();
+}
+
+// Redibuja todo lo que depende de las listas (sin guardar nada).
+function actualizar() {
   mostrarPestanas();
   mostrarLista();
   refrescarCanales();
@@ -305,35 +324,52 @@ async function cargar() {
     (guardado ? " · guardado en este navegador" : " · (no se pudo guardar, ver consola)");
 
   if (categorias.length > 0 && canales.length > 0) {
-    document.getElementById("explorador").hidden = false;
     mostrarCategorias();
     actualizar();
+    notificar("Catálogo cargado ✓");
   }
 }
 
 // ================= Dibujar categorías =================
+// Muestra los canales de una categoría (la usan la lista lateral y el desplegable).
+function elegirCategoria(id) {
+  categoriaElegida = id;
+  document.getElementById("buscador").value = "";
+  mostrarCategorias();
+  const cat = categorias.find(c => mismoId(c.category_id, id));
+  const deEsta = canales.filter(c => mismoId(c.category_id, id));
+  mostrarCanales(deEsta, cat ? limpiar(cat.category_name) : "Categoría");
+}
+
 function mostrarCategorias() {
   const ul = document.getElementById("lista-categorias");
+  const selector = document.getElementById("selector-categorias");
   ul.innerHTML = "";
+  selector.innerHTML = '<option value="">Elegí una categoría…</option>';
 
   for (const cat of categorias) {
     const cantidad = canales.filter(c => mismoId(c.category_id, cat.category_id)).length;
+    const texto = `${limpiar(cat.category_name)} (${cantidad})`;
 
+    // Lista lateral (PC)
     const li = document.createElement("li");
-    li.textContent = `${limpiar(cat.category_name)} (${cantidad})`;
+    li.textContent = texto;
     if (mismoId(cat.category_id, categoriaElegida)) li.classList.add("elegida");
-
-    li.addEventListener("click", () => {
-      categoriaElegida = cat.category_id;
-      document.getElementById("buscador").value = "";
-      mostrarCategorias();
-      const deEsta = canales.filter(c => mismoId(c.category_id, cat.category_id));
-      mostrarCanales(deEsta, limpiar(cat.category_name));
-    });
-
+    li.addEventListener("click", () => elegirCategoria(cat.category_id));
     ul.appendChild(li);
+
+    // Desplegable (celular)
+    const opcion = document.createElement("option");
+    opcion.value = cat.category_id;
+    opcion.textContent = texto;
+    opcion.selected = mismoId(cat.category_id, categoriaElegida);
+    selector.appendChild(opcion);
   }
 }
+
+document.getElementById("selector-categorias").addEventListener("change", (evento) => {
+  if (evento.target.value) elegirCategoria(evento.target.value);
+});
 
 // ================= Dibujar canales del catálogo =================
 function mostrarCanales(lista, titulo) {
@@ -580,13 +616,14 @@ function validarLista(datos) {
 }
 
 // Reemplaza tus listas por las de "datos", pidiendo confirmación.
-function aplicarLista(datos, origen) {
+function aplicarLista(datos, origen, preguntar = true) {
   const resumen = `Simple: ${datos.simple.length} · Completa: ${datos.completa.length}`;
-  if (!confirm(`Se va a REEMPLAZAR tu lista actual por la de ${origen} (${resumen}). ¿Seguir?`)) {
+  if (preguntar && !confirm(`Se va a REEMPLAZAR tu lista actual por la de ${origen} (${resumen}). ¿Seguir?`)) {
     return false;
   }
   listas = { simple: datos.simple, completa: datos.completa };
   panelesAbiertos.clear();
+  guardarLocal();
   actualizar();
   return true;
 }
@@ -596,7 +633,7 @@ async function importar(input) {
     const datos = await leerJson(input);
     if (!datos) return;
     validarLista(datos);
-    aplicarLista(datos, "el archivo");
+    if (aplicarLista(datos, "el archivo")) marcarPendiente(true);
   } catch (e) {
     alert("No se pudo importar: " + e.message);
   } finally {
@@ -627,6 +664,7 @@ function token() {
 
 function mostrarEstadoGitHub(texto) {
   estadoGitHub.textContent = texto;
+  if (texto) notificar(texto);  // también como mensaje flotante, por si estás en otra vista
 }
 
 function mostrarEstadoToken() {
@@ -676,6 +714,7 @@ async function traerDeGitHub() {
     validarLista(datos);
     if (aplicarLista(datos, "GitHub")) {
       shaLista = archivo.sha;
+      marcarPendiente(false);
       const fecha = datos.actualizado ? new Date(datos.actualizado).toLocaleString() : "fecha desconocida";
       mostrarEstadoGitHub(`Lista traída de GitHub ✓ (publicada el ${fecha})`);
     } else {
@@ -710,6 +749,7 @@ async function publicarEnGitHub() {
       }),
     });
     shaLista = resultado.content.sha;
+    marcarPendiente(false);
     mostrarEstadoGitHub(`Publicada ✓ ${new Date().toLocaleTimeString()} — las TVs la toman la próxima vez que se abra la app.`);
   } catch (e) {
     if (e.estado === 409) {
@@ -822,17 +862,43 @@ document.getElementById("buscador").addEventListener("input", (evento) => {
   const texto = evento.target.value.trim().toLowerCase();
   if (texto.length < 2) return;
 
-  categoriaElegida = null;
+  categoriaElegida = null;  // también vacía el desplegable al redibujar
   mostrarCategorias();
 
   const resultado = canales.filter(c => limpiar(c.name).toLowerCase().includes(texto));
   mostrarCanales(resultado.slice(0, 300), `Resultados para "${evento.target.value}"`);
 });
 
+// ================= Vistas (Mi lista / Catálogo / Ajustes) =================
+const CLAVE_VISTA = "emitv-vista";
+
+function mostrarVista(vista) {
+  document.body.dataset.vista = vista;  // el CSS decide qué se ve según este atributo
+  for (const boton of document.querySelectorAll(".nav-boton")) {
+    boton.classList.toggle("activo", boton.dataset.ir === vista);
+  }
+  localStorage.setItem(CLAVE_VISTA, vista);
+  window.scrollTo(0, 0);
+}
+
+for (const boton of document.querySelectorAll(".nav-boton")) {
+  boton.addEventListener("click", () => mostrarVista(boton.dataset.ir));
+}
+
+// ================= Mensaje flotante =================
+let temporizadorNotificacion = null;
+
+function notificar(texto) {
+  const caja = document.getElementById("notificacion");
+  caja.textContent = texto;
+  caja.hidden = false;
+  clearTimeout(temporizadorNotificacion);  // si había otro mensaje, se reemplaza
+  temporizadorNotificacion = setTimeout(() => { caja.hidden = true; }, 4000);
+}
+
 // ================= Al abrir la página =================
 cargarLocal();
-if (cargarCatalogoGuardado()) {
-  document.getElementById("explorador").hidden = false;
-  mostrarCategorias();
-}
+if (cargarCatalogoGuardado()) mostrarCategorias();
+marcarPendiente(hayPendiente());
+mostrarVista(localStorage.getItem(CLAVE_VISTA) || "lista");
 actualizar();

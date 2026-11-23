@@ -1,121 +1,253 @@
-/* Colores en un solo lugar (como Color.kt en la app) */
+/* =========================================================
+   EmiTV · Curación — estilos
+   Pensado "mobile first": primero el celular, después la PC
+   ========================================================= */
+
+/* ---------- Colores y medidas en un solo lugar ---------- */
 :root {
   color-scheme: dark;
-  --fondo: #121212;
-  --panel: #1e1e1e;
-  --texto: #eeeeee;
-  --suave: #999999;
+  --fondo: #0f1115;
+  --tarjeta: #171a21;
+  --tarjeta-2: #1e222b;
+  --borde: #2a2f3a;
+  --texto: #e8eaf0;
+  --suave: #8b93a5;
   --acento: #4fc3f7;
+  --acento-2: #7c8cff;
+  --peligro: #ff8a80;
+  --aviso: #ffcc80;
+  --radio: 14px;
+  --alto-nav: 64px;
 }
 
 * { box-sizing: border-box; }
 
-/* "hidden" tiene que ganarle siempre a cualquier display que pongamos abajo */
+/* "hidden" tiene que ganarle siempre a cualquier display */
 [hidden] { display: none !important; }
 
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--fondo);
   color: var(--texto);
+  /* Lugar para la barra de navegación de abajo (celular) */
+  padding-bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom));
 }
 
-header { padding: 16px; border-bottom: 1px solid #333; }
-h1 { margin: 0; font-size: 1.4rem; }
-h2 { font-size: 1.1rem; }
-section, aside { padding: 16px; }
-#carga label { display: block; margin: 8px 0; }
-
-/* Tres columnas: categorías | catálogo | tu lista */
-#explorador { display: grid; grid-template-columns: 260px 1fr 1fr; }
-#explorador > section { max-height: 85vh; overflow-y: auto; }
-
-/* En pantallas angostas, una sola columna */
-@media (max-width: 1000px) {
-  #explorador { grid-template-columns: 1fr; }
-  #explorador > section { max-height: none; }
-}
-
-aside { background: var(--panel); max-height: 80vh; overflow-y: auto; }
+h2 { font-size: 1.1rem; margin: 0 0 12px; }
+h3 { font-size: 0.95rem; margin: 12px 0 8px; color: var(--suave); font-weight: 500; }
 ul { list-style: none; margin: 0; padding: 0; }
 
-#lista-categorias li { padding: 8px; border-radius: 6px; cursor: pointer; }
-#lista-categorias li:hover { background: #2a2a2a; }
-#lista-categorias li.elegida { background: var(--acento); color: #000; }
-
-#lista-canales li {
+/* ---------- Barra superior ---------- */
+.barra-superior {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 6px 8px;
-  border-bottom: 1px solid #2a2a2a;
+  padding: 12px 16px;
+  background: rgba(15, 17, 21, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--borde);
 }
-#lista-canales img, .sin-logo { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
-#lista-canales small { margin-left: auto; color: var(--suave); text-align: right; }
-
-#buscador {
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  background: var(--panel);
-  color: var(--texto);
-  border: 1px solid #444;
-  border-radius: 6px;
+.marca { display: flex; align-items: baseline; gap: 8px; }
+.logo {
+  font-weight: 800;
+  font-size: 1.3rem;
+  background: linear-gradient(90deg, var(--acento), var(--acento-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-/* ---------- Botones ---------- */
-button {
-  background: #2a2a2a;
-  color: var(--texto);
-  border: 1px solid #444;
-  border-radius: 6px;
+.subtitulo { color: var(--suave); font-size: 0.9rem; }
+.acciones-globales { display: flex; align-items: center; gap: 10px; }
+.acciones-globales button { white-space: nowrap; }
+.pildora {
+  font-size: 0.8rem;
+  color: var(--aviso);
+  background: rgba(255, 204, 128, 0.12);
+  border: 1px solid rgba(255, 204, 128, 0.35);
   padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ---------- Navegación (celular: fija abajo) ---------- */
+.navegacion {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  height: calc(var(--alto-nav) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--tarjeta);
+  border-top: 1px solid var(--borde);
+}
+.nav-boton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--suave);
+  font-size: 0.75rem;
+}
+.nav-icono { font-size: 1.3rem; }
+.nav-boton.activo { color: var(--acento); }
+
+/* ---------- Vistas: en el celular se ve una sola a la vez ---------- */
+main { padding: 12px; }
+.vista { display: none; }
+body[data-vista="lista"] #vista-lista,
+body[data-vista="catalogo"] #vista-catalogo { display: block; }
+body[data-vista="ajustes"] #vista-ajustes { display: grid; gap: 12px; }
+
+.tarjeta {
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 16px;
+}
+.tarjeta-peligro { border-color: rgba(255, 138, 128, 0.35); }
+.ayuda { color: var(--suave); font-size: 0.85rem; margin: -6px 0 12px; }
+.estado { color: var(--suave); font-size: 0.85rem; min-height: 1.2em; margin: 8px 0 0; }
+.fila { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+
+/* ---------- Botones y campos ---------- */
+button {
+  background: var(--tarjeta-2);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 6px 12px;
+  min-height: 36px;
   cursor: pointer;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 button:hover:not(:disabled) { border-color: var(--acento); }
 button:disabled { opacity: 0.4; cursor: default; }
-
-.acciones { display: flex; gap: 6px; flex-shrink: 0; }
-
-/* ---------- Pestañas ---------- */
-.pestanas { display: flex; gap: 8px; margin-bottom: 12px; }
-.pestana { font-size: 1rem; padding: 8px 16px; }
-.pestana.activa { background: var(--acento); color: #000; border-color: var(--acento); }
-
-/* ---------- Tu lista ---------- */
-#mi-lista li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  border-bottom: 1px solid #2a2a2a;
+button.primario {
+  background: linear-gradient(90deg, var(--acento), var(--acento-2));
+  color: #0b0d12;
+  border: none;
+  font-weight: 700;
 }
-#mi-lista .numero { width: 2.5em; text-align: right; color: var(--suave); flex-shrink: 0; }
-#mi-lista img, #mi-lista .sin-logo { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
+button.peligro { border-color: var(--peligro); color: var(--peligro); }
+
+.campo, #buscador, #selector-categorias {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--fondo);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  font: inherit;
+}
+.campo:focus, #buscador:focus, #selector-categorias:focus { outline: none; border-color: var(--acento); }
+#buscador, #selector-categorias { margin-bottom: 10px; }
+
+.campo-archivo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: var(--suave);
+}
+
+/* ---------- Catálogo ---------- */
+/* En el celular las categorías son un desplegable; la lista lateral se oculta */
+#lista-categorias { display: none; }
+
+#lista-categorias li { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+#lista-categorias li:hover { background: var(--tarjeta-2); }
+#lista-categorias li.elegida { background: var(--acento); color: #0b0d12; }
+
+/* Filas del catálogo, de "Mi lista" y de respaldos */
+#lista-canales li,
+#mi-lista li,
+.fila-respaldo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--borde);
+}
+#lista-canales img, #mi-lista img, .fila-respaldo img,
+.sin-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: var(--tarjeta-2);
+  border-radius: 8px;
+  padding: 3px;
+}
+#lista-canales li > span, .fila-respaldo > span { flex: 1; min-width: 0; }
+/* El detalle (#id · categoría) va en su propio renglón, debajo del nombre */
+#lista-canales small, .fila-respaldo small {
+  order: 3;
+  flex-basis: 100%;
+  padding-left: 50px;
+  color: var(--suave);
+  font-size: 0.8rem;
+}
+.acciones { display: flex; gap: 6px; flex-shrink: 0; }
+#lista-canales .acciones, .fila-respaldo button { order: 4; margin-left: auto; }
+
+/* ---------- Mi lista ---------- */
+.encabezado-lista { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.encabezado-lista h2 { margin: 0; }
+.pestanas { display: flex; gap: 6px; background: var(--fondo); padding: 4px; border-radius: 12px; }
+.pestana { border: none; background: none; padding: 6px 14px; border-radius: 9px; }
+.pestana.activa { background: var(--acento); color: #0b0d12; font-weight: 700; }
+
+#mi-lista .numero {
+  width: 2em;
+  text-align: right;
+  color: var(--suave);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
 #mi-lista input {
   flex: 1;
   min-width: 0;
   background: transparent;
   color: var(--texto);
   border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 4px 6px;
+  border-radius: 8px;
+  padding: 6px 8px;
   font: inherit;
 }
-#mi-lista input:hover, #mi-lista input:focus { border-color: #444; background: var(--fondo); }
-#mi-lista li.vacia { color: var(--suave); border: none; }
+#mi-lista input:hover, #mi-lista input:focus { border-color: var(--borde); background: var(--fondo); outline: none; }
+/* En el celular, los botones de cada canal van en un renglón propio */
+#mi-lista .acciones { flex-basis: 100%; justify-content: flex-end; }
+#mi-lista li.vacia { color: var(--suave); border: none; display: block; }
+#mi-lista li.faltante input { color: var(--peligro); }
 
-/* Canal que ya no existe en el catálogo (el proveedor lo cambió o lo quitó) */
-#mi-lista li.faltante input { color: #ff8a80; }
+#avisos li { color: var(--aviso); font-size: 0.85rem; padding: 2px 0; }
+#avisos:not(:empty) { margin-bottom: 10px; }
 
 /* ---------- Respaldos ---------- */
 button.con-respaldos { border-color: var(--acento); color: var(--acento); }
-
 #mi-lista li.panel-respaldos {
   display: block;
-  background: #181818;
-  padding: 8px 8px 12px 3.5em;   /* sangría para que se vea "debajo" del canal */
+  background: var(--fondo);
+  border-radius: 10px;
+  margin: 4px 0 8px;
+  padding: 10px;
 }
 .encabezado-respaldos {
   display: flex;
@@ -126,46 +258,82 @@ button.con-respaldos { border-color: var(--acento); color: var(--acento); }
   font-size: 0.85rem;
   margin-bottom: 6px;
 }
-.fila-respaldo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 0;
+.fila-respaldo { padding: 8px 0; }
+/* "#mi-lista" en el selector para ganarle a la regla de los campos de nombre */
+#mi-lista .fila-respaldo input[type="checkbox"] {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--acento);
 }
-.fila-respaldo small { margin-left: auto; color: var(--suave); }
-.fila-respaldo input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--acento); }
 
-/* ---------- Exportar / importar y avisos ---------- */
-.herramientas { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-#avisos { margin-bottom: 12px; }
-#avisos li { color: #ffcc80; font-size: 0.85rem; padding: 2px 0; }
-
-/* ---------- GitHub ---------- */
-#github { border-bottom: 1px solid #333; }
-#campo-token {
-  flex: 1;
-  min-width: 200px;
-  padding: 6px 10px;
-  background: var(--panel);
-  color: var(--texto);
-  border: 1px solid #444;
-  border-radius: 6px;
-  font: inherit;
+/* ---------- Notificación flotante ---------- */
+#notificacion {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--alto-nav) + 16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: calc(100% - 32px);
+  background: var(--tarjeta-2);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 10px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  font-size: 0.9rem;
 }
-#boton-publicar { border-color: var(--acento); }
-#estado-github { color: var(--suave); min-height: 1.2em; }
 
-/* ---------- Servidor ---------- */
-#servidor { border-bottom: 1px solid #333; }
-#campo-servidor {
-  flex: 1;
-  min-width: 200px;
-  padding: 6px 10px;
-  background: var(--panel);
-  color: var(--texto);
-  border: 1px solid #444;
-  border-radius: 6px;
-  font: inherit;
+/* ---------- Pantallas táctiles: todo un poco más grande ---------- */
+@media (pointer: coarse) {
+  button { min-height: 42px; }
 }
-#boton-publicar-servidor { border-color: #ff8a80; }  /* en rojo suave: afecta a todas las TVs */
-.ayuda, #estado-servidor { color: var(--suave); font-size: 0.9rem; }
+
+/* =========================================================
+   PC (pantallas anchas)
+   ========================================================= */
+@media (min-width: 900px) {
+  body { padding-bottom: 0; }
+
+  /* La navegación pasa arriba, como pestañas */
+  .navegacion {
+    position: sticky;
+    top: 61px;
+    height: auto;
+    padding: 0 16px;
+    gap: 4px;
+    background: var(--fondo);
+    border-top: none;
+    border-bottom: 1px solid var(--borde);
+  }
+  .nav-boton {
+    flex: none;
+    flex-direction: row;
+    gap: 6px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    border-bottom: 2px solid transparent;
+  }
+  .nav-icono { font-size: 1rem; }
+  .nav-boton.activo { border-bottom-color: var(--acento); }
+  /* En la PC catálogo y lista se ven juntos: no hace falta el botón "Catálogo" */
+  .nav-boton[data-ir="catalogo"] { display: none; }
+
+  main { padding: 16px; }
+  #explorador { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  body[data-vista="lista"] #vista-catalogo,
+  body[data-vista="catalogo"] #vista-lista { display: block; }
+  body[data-vista="ajustes"] #vista-ajustes { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+
+  /* Cada columna con su propio scroll */
+  #vista-catalogo, #vista-lista { max-height: calc(100vh - 140px); overflow-y: auto; }
+
+  /* Categorías como lista al costado; sin desplegable */
+  #selector-categorias { display: none; }
+  .catalogo-cuerpo { display: grid; grid-template-columns: 200px 1fr; gap: 12px; }
+  #lista-categorias { display: block; max-height: calc(100vh - 260px); overflow-y: auto; }
+
+  /* En la PC, los botones de "Mi lista" caben en el mismo renglón */
+  #mi-lista .acciones { flex-basis: auto; }
+
+  #notificacion { bottom: 24px; }
+}
