@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -60,6 +61,11 @@ private val TECLAS_OK = setOf(
 )
 // Cuánto hay que mantener OK apretado para abrir los ajustes.
 private const val MS_OK_LARGO = 3000L
+
+// Respaldo automático: cuánto esperar a que una señal arranque antes de probar la siguiente,
+// y cuánto esperar para reintentar cuando fallaron todas.
+private const val MS_ESPERA_SENAL = 12_000L
+private const val MS_REINTENTO = 30_000L
 
 @Composable
 fun PantallaTv(
@@ -131,15 +137,19 @@ fun Reproductor(
         onStopOrDispose { player.pause() }
     }
 
-    // 3. Escuchar errores y estado de reproducción.
-    var error by remember { mutableStateOf<String?>(null) }
+    // 3. Escuchar el estado del reproductor y sus errores.
+    var error by remember { mutableStateOf<String?>(null) }   // el último error (para el diagnóstico)
     var estado by remember { mutableStateOf("") }
+    var estadoReproductor by remember { mutableIntStateOf(Player.STATE_IDLE) }
+    var fallos by remember { mutableIntStateOf(0) }            // sube con cada error del reproductor
     DisposableEffect(player) {
         val escucha = object : Player.Listener {
             override fun onPlayerError(e: PlaybackException) {
                 error = "${e.errorCodeName}\n${e.cause?.message ?: ""}"
+                fallos++
             }
             override fun onPlaybackStateChanged(state: Int) {
+                estadoReproductor = state
                 estado = when (state) {
                     Player.STATE_BUFFERING -> "Cargando…"
                     Player.STATE_READY -> "Reproduciendo"
@@ -152,17 +162,78 @@ fun Reproductor(
         onDispose { player.removeListener(escucha) }
     }
 
-    // 4.
-    LaunchedEffect(canal) {
-        error = null
+    // 4. RESPALDO AUTOMÁTICO
+    // Las señales del canal: la principal y sus respaldos, en orden.
+    // Si una falla (da error, se corta o se queda cargando), se pasa sola a la siguiente.
+    val senales = remember(canal) { listOf(canal.principal) + canal.respaldos }
+
+    // Qué señal anduvo en cada canal (en esta sesión): la próxima vez se arranca directo por ahí.
+    val senalQueAnduvo = remember { mutableMapOf<Int, Int>() }
+
+    // remember(canal): al cambiar de canal, estos estados vuelven a empezar.
+    var intento by remember(canal) {
+        mutableIntStateOf(senalQueAnduvo[canal.numero]?.takeIf { it < senales.size } ?: 0)
+    }
+    var ronda by remember(canal) { mutableIntStateOf(0) }            // cada vuelta completa
+    var fallaronTodas by remember(canal) { mutableStateOf(false) }
+
+    fun probarSiguiente() {
+        if (fallaronTodas) return
+        if (intento + 1 < senales.size) intento++ else fallaronTodas = true
+    }
+
+    // 4a. Reproducir la señal que toca.
+    LaunchedEffect(canal, intento, ronda) {
+        if (fallaronTodas) return@LaunchedEffect
         try {
-            player.setMediaSource(crearMediaSource(canal.principal))
+            player.setMediaSource(crearMediaSource(senales[intento]))
             player.prepare()
             player.playWhenReady = true
         } catch (e: CancellationException) {
-            throw e  // se cambió de canal mientras se preparaba: no es un error
+            throw e  // se cambió de canal o de señal mientras se preparaba: no es un error
         } catch (e: Exception) {
-            error = "No se pudo abrir el canal:\n${e.message ?: e}"
+            error = e.message ?: e.toString()
+            probarSiguiente()
+        }
+    }
+
+    // 4b. Si el reproductor da un error, probar la siguiente señal.
+    LaunchedEffect(fallos) {
+        if (fallos > 0) probarSiguiente()
+    }
+
+    // 4c. Vigilante: si se queda "Cargando…" demasiado o el stream termina, probar la siguiente.
+    //     Si el estado cambia antes (por ejemplo, empieza a reproducir), este efecto se cancela solo.
+    LaunchedEffect(canal, intento, ronda, estadoReproductor) {
+        when (estadoReproductor) {
+            Player.STATE_BUFFERING -> {
+                delay(MS_ESPERA_SENAL)
+                probarSiguiente()
+            }
+            Player.STATE_ENDED -> probarSiguiente()   // un canal en vivo no debería "terminar"
+            Player.STATE_READY -> senalQueAnduvo[canal.numero] = intento   // ¡anduvo! recordarla
+        }
+    }
+
+    // 4d. Si fallaron todas: avisar, esperar y volver a empezar desde la principal.
+    LaunchedEffect(fallaronTodas) {
+        if (fallaronTodas) {
+            player.stop()
+            senalQueAnduvo.remove(canal.numero)
+            delay(MS_REINTENTO)
+            intento = 0
+            ronda++
+            fallaronTodas = false
+        }
+    }
+
+    // 4e. Aviso de unos segundos cuando se está usando una señal alternativa.
+    var avisoAlternativa by remember { mutableStateOf(false) }
+    LaunchedEffect(canal, intento) {
+        avisoAlternativa = intento > 0
+        if (avisoAlternativa) {
+            delay(4000)
+            avisoAlternativa = false
         }
     }
 
@@ -297,14 +368,29 @@ fun Reproductor(
             )
         }
 
-        error?.let {
+        // Fallaron todas las señales del canal
+        if (fallaronTodas) {
             Text(
-                "No se pudo reproducir:\n$it",
+                "${canal.nombre} no está disponible en este momento.\nSe vuelve a intentar en unos segundos…",
+                style = MaterialTheme.typography.titleLarge,
                 color = Color.White,
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .background(Color.Black.copy(alpha = 0.7f))
+                    .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
                     .padding(24.dp),
+            )
+        }
+
+        // Se está usando una señal alternativa
+        if (avisoAlternativa) {
+            Text(
+                "Señal alternativa ${intento} de ${senales.size - 1}",
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(32.dp)
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
 
@@ -326,7 +412,9 @@ fun Reproductor(
         if (mostrarDiagnostico) {
             val video = player.videoFormat
             Text(
-                "$estado · ${video?.sampleMimeType ?: "?"} · ${video?.height ?: "?"}p · $ultimaTecla",
+                "$estado · señal ${intento + 1}/${senales.size} · ${video?.sampleMimeType ?: "?"} · " +
+                    "${video?.height ?: "?"}p · $ultimaTecla" +
+                    (error?.let { "\n" + it.lineSequence().first() } ?: ""),
                 color = Color.White,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
