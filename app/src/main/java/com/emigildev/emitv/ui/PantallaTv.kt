@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +50,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.emigildev.emitv.R
 import com.emigildev.emitv.data.CanalEnLista
+import com.emigildev.emitv.data.Senal
 import com.emigildev.emitv.data.Xtream
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
@@ -185,6 +187,12 @@ fun Reproductor(
     // 4a. Reproducir la señal que toca.
     LaunchedEffect(canal, intento, ronda) {
         if (fallaronTodas) return@LaunchedEffect
+        if (senales[intento] is Senal.DeYoutube) {
+            // YouTube se ve con su propio reproductor (más abajo): se apaga el de siempre
+            player.stop()
+            estadoReproductor = Player.STATE_BUFFERING   // "cargando" hasta que YouTube avise
+            return@LaunchedEffect
+        }
         try {
             player.setMediaSource(crearMediaSource(senales[intento]))
             player.prepare()
@@ -336,7 +344,34 @@ fun Reproductor(
             modifier = Modifier.fillMaxSize(),
         )
 
-        // NUEVO: el cartel no se muestra mientras la lista está abierta.
+        // Si la señal actual es de YouTube, su reproductor va encima del de siempre.
+        // key(...) hace que se cree uno nuevo para cada señal y cada reintento.
+        val senalActual = senales.getOrNull(intento)
+        if (senalActual is Senal.DeYoutube && !fallaronTodas) {
+            key(senalActual, ronda) {
+                ReproductorYoutube(
+                    senal = senalActual,
+                    onEvento = { evento, dato ->
+                        // Traducimos los avisos de YouTube a los mismos estados del otro reproductor,
+                        // así el vigilante y el respaldo automático funcionan igual.
+                        when (evento) {
+                            "error" -> {
+                                error = "YouTube: error $dato"
+                                fallos++
+                            }
+                            "estado" -> when (dato) {
+                                "1" -> estadoReproductor = Player.STATE_READY       // reproduciendo
+                                "3" -> estadoReproductor = Player.STATE_BUFFERING   // cargando
+                                "0" -> estadoReproductor = Player.STATE_ENDED       // terminó
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
+        // El cartel no se muestra mientras la lista está abierta.
         if (mostrarCartel && !listaAbierta) {
             Cartel(canal, numero, Modifier.align(Alignment.TopStart))
         }

@@ -207,6 +207,18 @@ button.peligro { border-color: var(--peligro); color: var(--peligro); }
 .acciones { display: flex; gap: 6px; flex-shrink: 0; }
 #lista-canales .acciones, .fila-respaldo .acciones { order: 4; margin-left: auto; }
 
+/* ---------- Agregar desde YouTube ---------- */
+#agregar-youtube {
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+#agregar-youtube summary { cursor: pointer; font-weight: 600; }
+#agregar-youtube[open] summary { margin-bottom: 8px; }
+#agregar-youtube .campo { margin-bottom: 8px; }
+
 /* ---------- Mi lista ---------- */
 .encabezado-lista { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .encabezado-lista h2 { margin: 0; }

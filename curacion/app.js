@@ -58,29 +58,41 @@ function buscarCanal(id) {
 // Los respaldos viejos (solo números) siguen funcionando tal cual.
 
 function refDeItem(item) {
-  return item.tipo === "m3u"
-    ? { tipo: "m3u", fuente: item.fuente, clave: item.clave }
-    : Number(item.id);
+  if (item.tipo === "m3u") return { tipo: "m3u", fuente: item.fuente, clave: item.clave };
+  if (item.tipo === "youtube") return refYoutube(item);
+  return Number(item.id);
+}
+
+// Referencia de YouTube: { tipo: "youtube", canal: "UC…" } o { tipo: "youtube", video: "…" }.
+// Lleva también el nombre, para poder mostrarla (comparar no lo usa).
+function refYoutube({ canal, video, nombre }) {
+  return { tipo: "youtube", ...(canal ? { canal } : { video }), nombre };
 }
 
 // Referencia de un canal tal como se muestra en el catálogo (del proveedor o de una M3U).
 function refDeVista(canal) {
-  return canal.m3u
-    ? { tipo: "m3u", fuente: canal.m3u.fuente, clave: canal.m3u.clave }
-    : Number(canal.stream_id);
+  if (canal.m3u) return { tipo: "m3u", fuente: canal.m3u.fuente, clave: canal.m3u.clave };
+  if (canal.youtube) return refYoutube(canal.youtube);
+  return Number(canal.stream_id);
 }
 
 function mismaRef(a, b) {
   const objetoA = typeof a === "object";
   const objetoB = typeof b === "object";
-  if (objetoA && objetoB) return a.fuente === b.fuente && a.clave === b.clave;
+  if (objetoA && objetoB) {
+    if (a.tipo !== b.tipo) return false;
+    if (a.tipo === "youtube") return a.canal === b.canal && a.video === b.video;
+    return a.fuente === b.fuente && a.clave === b.clave;
+  }
   if (!objetoA && !objetoB) return mismoId(a, b);
-  return false;  // uno del proveedor y otro de una M3U: nunca son el mismo
+  return false;  // uno del proveedor y otro de otra fuente: nunca son el mismo
 }
 
 // Texto único de una referencia (para usar como clave, por ejemplo de un panel abierto).
 function textoRef(ref) {
-  return typeof ref === "object" ? `m3u:${ref.fuente}:${ref.clave}` : `xtream:${ref}`;
+  if (typeof ref !== "object") return `xtream:${ref}`;
+  if (ref.tipo === "youtube") return `youtube:${ref.canal ?? ""}:${ref.video ?? ""}`;
+  return `m3u:${ref.fuente}:${ref.clave}`;
 }
 
 function buscarEntrada(fuente, clave) {
@@ -89,6 +101,14 @@ function buscarEntrada(fuente, clave) {
 
 // Lo necesario para mostrar una referencia: nombre, logo, detalle, y si falta en lo cargado.
 function describirRef(ref) {
+  if (typeof ref === "object" && ref.tipo === "youtube") {
+    return {
+      nombre: ref.nombre || "YouTube",
+      logo: miniaturaYoutube(ref.video),
+      detalle: ref.canal ? `▶ YouTube · vivo del canal ${ref.canal}` : `▶ YouTube · video ${ref.video}`,
+      falta: false,
+    };
+  }
   if (typeof ref === "object") {
     const entrada = buscarEntrada(ref.fuente, ref.clave);
     const fuenteCargada = entradasM3u.some(e => e.fuente === ref.fuente);
@@ -185,9 +205,10 @@ function nombreCorto(nombre) {
 
 // Las claves base con las que se puede reconocer el canal de un ítem de tu lista.
 function clavesDeItem(item) {
-  const nombres = item.tipo === "m3u"
-    ? [buscarEntrada(item.fuente, item.clave)?.nombre, item.nombre]
-    : [buscarCanal(item.id)?.name, item.original, item.nombre];
+  const nombres =
+    item.tipo === "m3u" ? [buscarEntrada(item.fuente, item.clave)?.nombre, item.nombre] :
+    item.tipo === "youtube" ? [item.nombre] :
+    [buscarCanal(item.id)?.name, item.original, item.nombre];
   return [...new Set(nombres.filter(Boolean).map(n => claveBase(nombreCorto(n))).filter(Boolean))];
 }
 
@@ -321,6 +342,19 @@ function cargarCatalogoGuardado() {
 function agregar(nombreLista, canal) {
   if (estaEnLista(nombreLista, refDeVista(canal))) return;
 
+  if (canal.youtube) {
+    const { canal: idCanal, video, nombre } = canal.youtube;
+    listas[nombreLista].push({
+      tipo: "youtube",
+      ...(idCanal ? { canal: idCanal } : { video }),
+      nombre,
+      ...(video ? { logo: miniaturaYoutube(video) } : {}),
+      respaldos: [],
+    });
+    huboCambio();
+    return;
+  }
+
   if (canal.m3u) {
     // Canal de una lista M3U.
     // Sin lo que va entre paréntesis o corchetes: "Encuentro (720p) [Geo-blocked]" -> "Encuentro"
@@ -379,19 +413,33 @@ function hacerPrincipal(item, ref) {
   const panelAbierto = panelesAbiertos.delete(clavePanel(item));
   item.respaldos = [anterior, ...(item.respaldos ?? []).filter(r => !mismaRef(r, ref))];
 
-  if (typeof ref === "object") {
+  if (typeof ref === "object" && ref.tipo === "youtube") {
+    item.tipo = "youtube";
+    delete item.canal;
+    delete item.video;
+    if (ref.canal) item.canal = ref.canal; else item.video = ref.video;
+    item.logo = miniaturaYoutube(ref.video);
+    delete item.id;
+    delete item.original;
+    delete item.fuente;
+    delete item.clave;
+  } else if (typeof ref === "object") {
     item.tipo = "m3u";
     item.fuente = ref.fuente;
     item.clave = ref.clave;
     item.logo = buscarEntrada(ref.fuente, ref.clave)?.logo;
     delete item.id;
     delete item.original;
+    delete item.canal;
+    delete item.video;
   } else {
     item.tipo = "xtream";
     item.id = Number(ref);
     item.original = buscarCanal(ref)?.name;
     delete item.fuente;
     delete item.clave;
+    delete item.canal;
+    delete item.video;
     delete item.logo;
   }
 
@@ -674,10 +722,10 @@ function mostrarLista() {
 
     const acciones = document.createElement("div");
     acciones.className = "acciones";
-    if (item.tipo === "m3u") {
+    if (item.tipo === "m3u" || item.tipo === "youtube") {
       const etiqueta = document.createElement("span");
       etiqueta.className = "etiqueta-fuente";
-      etiqueta.textContent = `📡 ${item.fuente}`;
+      etiqueta.textContent = item.tipo === "m3u" ? `📡 ${item.fuente}` : "▶ YouTube";
       acciones.append(etiqueta);
     }
     const botonRespaldos = crearBoton(
@@ -824,7 +872,7 @@ function revisarListas() {
       // Fuentes M3U que no están configuradas (principal o respaldos)
       const refs = [refDeItem(item), ...(item.respaldos ?? [])];
       for (const ref of refs) {
-        if (typeof ref === "object" && !listas.fuentes[ref.fuente]) {
+        if (typeof ref === "object" && ref.tipo === "m3u" && !listas.fuentes[ref.fuente]) {
           avisos.push(`${donde}: usa la fuente "${ref.fuente}", que no está en Ajustes → Fuentes M3U.`);
         }
       }
@@ -1438,6 +1486,76 @@ function mostrarFuentes() {
 }
 
 document.getElementById("boton-agregar-fuente").addEventListener("click", agregarFuente);
+
+// ================= YouTube =================
+// Entiende lo que pegues: enlace de un video o vivo, enlace del canal, o un ID.
+//   https://www.youtube.com/watch?v=tInHlI4KdmQ  → { video: "tInHlI4KdmQ" }
+//   https://youtu.be/tInHlI4KdmQ · /live/… · /embed/… → { video: … }
+//   https://www.youtube.com/channel/UC…  o  UC…    → { canal: "UC…" }
+function leerYoutube(texto) {
+  const t = texto.trim();
+  let m = t.match(/(UC[\w-]{22})/);
+  if (m) return { canal: m[1] };
+  m = t.match(/(?:[?&]v=|youtu\.be\/|\/live\/|\/embed\/|\/shorts\/)([\w-]{11})/);
+  if (m) return { video: m[1] };
+  if (/^[\w-]{11}$/.test(t)) return { video: t };
+  return null;
+}
+
+function miniaturaYoutube(video) {
+  return video ? `https://i.ytimg.com/vi/${video}/hqdefault.jpg` : undefined;
+}
+
+// Arma un canal "de vista" con lo que hay en el formulario (o avisa qué falta).
+function canalDelFormularioYoutube() {
+  const estado = document.getElementById("estado-yt");
+  const texto = document.getElementById("campo-yt-enlace").value;
+  if (/@[\w.-]+/.test(texto) && !leerYoutube(texto)) {
+    estado.textContent = "Los enlaces con @nombre no sirven: pegá el enlace del vivo, o el ID del canal (empieza con UC).";
+    return null;
+  }
+  const datos = leerYoutube(texto);
+  if (!datos) {
+    estado.textContent = "No reconozco ese enlace. Pegá el enlace del video en vivo, o el ID del canal (empieza con UC).";
+    return null;
+  }
+  const nombre = document.getElementById("campo-yt-nombre").value.trim();
+  if (!nombre) {
+    estado.textContent = "Poné un nombre para el canal (por ejemplo: El Destape).";
+    return null;
+  }
+  estado.textContent = "";
+  return {
+    stream_id: textoRef(refYoutube({ ...datos, nombre })),
+    name: nombre,
+    stream_icon: miniaturaYoutube(datos.video),
+    youtube: { ...datos, nombre },
+  };
+}
+
+function limpiarFormularioYoutube(mensaje) {
+  document.getElementById("campo-yt-enlace").value = "";
+  document.getElementById("campo-yt-nombre").value = "";
+  notificar(mensaje);
+}
+
+for (const nombreLista of ["simple", "completa"]) {
+  document.getElementById(`boton-yt-${nombreLista}`).addEventListener("click", () => {
+    const canal = canalDelFormularioYoutube();
+    if (!canal) return;
+    if (estaEnLista(nombreLista, refDeVista(canal))) {
+      notificar(`Ya está en la lista ${NOMBRES_LISTA[nombreLista]}.`);
+      return;
+    }
+    agregar(nombreLista, canal);
+    limpiarFormularioYoutube(`▶ ${canal.name} agregado a ${NOMBRES_LISTA[nombreLista]} ✓`);
+  });
+}
+
+document.getElementById("boton-yt-respaldo").addEventListener("click", () => {
+  const canal = canalDelFormularioYoutube();
+  if (canal) elegirDestinoRespaldo(canal);
+});
 
 // ================= Elegir de qué canal es respaldo =================
 // Para cuando la página no puede adivinarlo (por ejemplo, "ɛֆքռ" es ESPN):

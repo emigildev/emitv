@@ -23,7 +23,7 @@ data class ListaRemota(
 
 @Serializable
 data class ItemLista(
-    val tipo: String,                  // "xtream" o "m3u" (y "youtube" en la 6D-2)
+    val tipo: String,                  // "xtream", "m3u" o "youtube"
     val nombre: String,
     // --- tipo "xtream" ---
     val id: Int? = null,
@@ -32,6 +32,9 @@ data class ItemLista(
     val fuente: String? = null,        // qué lista M3U (una de "fuentes")
     val clave: String? = null,         // tvg-id del canal, o su URL si no tiene
     val logo: String? = null,
+    // --- tipo "youtube" (uno de los dos) ---
+    val canal: String? = null,         // ID del canal (UC…): muestra su vivo actual
+    val video: String? = null,         // ID de un video o vivo puntual
     // --- cualquier tipo ---
     // Cada respaldo puede ser un número (canal del proveedor IPTV)
     // o un objeto { "tipo": "m3u", "fuente": "...", "clave": "..." }.
@@ -69,7 +72,13 @@ sealed interface Senal {
 
     /** Una URL directa (listas M3U), con cabeceras especiales si hacen falta. */
     data class Directa(val url: String, val cabeceras: Map<String, String> = emptyMap()) : Senal
+
+    /** YouTube: el vivo actual de un canal, o un video puntual. Se ve con el reproductor de YouTube. */
+    data class DeYoutube(val canal: String?, val video: String?) : Senal
 }
+
+/** Miniatura de un video de YouTube (sirve de "logo" si no hay otro). */
+fun miniaturaYoutube(video: String?): String? = video?.let { "https://i.ytimg.com/vi/$it/hqdefault.jpg" }
 
 // ---------- Un canal de tu lista, ya "resuelto" y listo para ver ----------
 
@@ -84,7 +93,7 @@ data class CanalEnLista(
 // ---------- Repetidos: la misma lógica que claveBase() de la página de curación ----------
 
 private val ETIQUETAS = Regex(
-    "\\b(fhd|uhd|hd|sd|4k|8k|hevc|h ?265|h ?264|1080p?|720p?|480p?|backup|bkp|alt|op ?\\\\d|opc ?\\\\d|opcion ?\\\\d|latam|ar|arg|argentina)\\b"
+    "\\b(fhd|uhd|hd|sd|4k|8k|hevc|h ?265|h ?264|1080p?|720p?|480p?|backup|bkp|alt|op ?\\d|opc ?\\d|opcion ?\\d|latam|ar|arg|argentina)\\b"
 )
 private val PREFIJO_PAIS = Regex("^\\s*[a-z]{2,3}\\s*[|:]", RegexOption.IGNORE_CASE)
 private val ACENTOS = Regex("\\p{Mn}+")
@@ -144,6 +153,10 @@ fun resolver(
                 listOfNotNull(clave?.takeIf { it.startsWith("http") }?.let { Senal.Directa(it) })
             }
 
+    fun senalYoutube(canal: String?, video: String?): List<Senal> =
+        if (canal.isNullOrBlank() && video.isNullOrBlank()) emptyList()
+        else listOf(Senal.DeYoutube(canal?.takeIf { it.isNotBlank() }, video?.takeIf { it.isNotBlank() }))
+
     // Un respaldo: número (proveedor IPTV) u objeto { tipo, fuente, clave } / { tipo, id }.
     fun senalesDe(respaldo: JsonElement): List<Senal> = when (respaldo) {
         is JsonPrimitive -> listOfNotNull(respaldo.intOrNull?.let { porId[it] }?.let { Senal.DeXtream(it) })
@@ -152,13 +165,18 @@ fun resolver(
             when (texto("tipo")) {
                 "m3u" -> senalesM3u(texto("fuente"), texto("clave"), nombre = null)
                 "xtream" -> listOfNotNull(texto("id")?.toIntOrNull()?.let { porId[it] }?.let { Senal.DeXtream(it) })
+                "youtube" -> senalYoutube(texto("canal"), texto("video"))
                 else -> emptyList()
             }
         }
         else -> emptyList()
     }
 
-    fun logoDe(senal: Senal): String? = (senal as? Senal.DeXtream)?.canal?.logo
+    fun logoDe(senal: Senal): String? = when (senal) {
+        is Senal.DeXtream -> senal.canal.logo
+        is Senal.DeYoutube -> miniaturaYoutube(senal.video)
+        is Senal.Directa -> null
+    }
 
     return items.mapIndexedNotNull { i, item ->
         val numero = i + 1
@@ -175,7 +193,8 @@ fun resolver(
                 val entradas = entradasM3u(item.fuente, item.clave, item.nombre)
                 senalesM3u(item.fuente, item.clave, item.nombre) to (entradas.firstOrNull()?.logo ?: item.logo)
             }
-            else -> return@mapIndexedNotNull null   // YouTube y otros tipos: más adelante
+            "youtube" -> senalYoutube(item.canal, item.video) to (item.logo ?: miniaturaYoutube(item.video))
+            else -> return@mapIndexedNotNull null   // tipos que esta versión de la app no conoce
         }
 
         // 2) Los respaldos, de cualquier fuente y en el orden que elegiste

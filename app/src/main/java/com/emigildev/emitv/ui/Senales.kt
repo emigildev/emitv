@@ -38,6 +38,7 @@ suspend fun crearMediaSource(senal: Senal): MediaSource {
             tipo = tipoDetectado
             cabeceras = senal.cabeceras
         }
+        is Senal.DeYoutube -> error("YouTube se ve con ReproductorYoutube, no con este reproductor")
     }
 
     val fabrica = DefaultHttpDataSource.Factory()
