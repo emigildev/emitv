@@ -738,6 +738,82 @@ document.getElementById("boton-traer").addEventListener("click", traerDeGitHub);
 document.getElementById("boton-publicar").addEventListener("click", publicarEnGitHub);
 mostrarEstadoToken();
 
+// ================= Servidor (config.json) =================
+const RUTA_CONFIG = "datos/config.json";
+let shaConfig = null;        // huella de config.json en GitHub (null = todavía no existe)
+let configTraida = false;    // para no publicar sin haber traído antes
+
+const campoServidor = document.getElementById("campo-servidor");
+const estadoServidor = document.getElementById("estado-servidor");
+
+async function traerConfig() {
+  estadoServidor.textContent = "Trayendo…";
+  try {
+    const archivo = await github(RUTA_CONFIG);
+    const datos = JSON.parse(desdeBase64(archivo.content));
+    campoServidor.value = datos.servidor ?? "";
+    shaConfig = archivo.sha;
+    configTraida = true;
+    estadoServidor.textContent = "Servidor actual traído de GitHub ✓";
+  } catch (e) {
+    if (e.estado === 404) {
+      // Todavía no existe: se crea la primera vez que publiques.
+      shaConfig = null;
+      configTraida = true;
+      estadoServidor.textContent = "Todavía no hay config.json: se va a crear al publicar.";
+    } else {
+      estadoServidor.textContent = "No se pudo traer: " + e.message;
+    }
+  }
+}
+
+async function publicarConfig() {
+  if (!token()) {
+    alert("Primero guardá tu token de GitHub.");
+    return;
+  }
+  if (!configTraida) {
+    alert("Antes de publicar, usá \"Traer servidor\".");
+    return;
+  }
+
+  // Validar la dirección antes de mandarla a todas las TVs
+  const servidor = campoServidor.value.trim().replace(/\/+$/, "");
+  let direccion;
+  try {
+    direccion = new URL(servidor);
+  } catch {
+    alert("La dirección no es válida. Ejemplo: https://miservidor.com");
+    return;
+  }
+  if (direccion.protocol !== "https:" && direccion.protocol !== "http:") {
+    alert("La dirección tiene que empezar con https:// o http://");
+    return;
+  }
+  if (!confirm(`TODAS las TVs van a usar este servidor la próxima vez que abran la app:\n\n${servidor}\n\n¿Seguro?`)) {
+    return;
+  }
+
+  estadoServidor.textContent = "Publicando…";
+  try {
+    const texto = JSON.stringify({ version: 1, servidor }, null, 2) + "\n";
+    const cuerpo = { message: `Servidor: ${servidor}`, content: aBase64(texto) };
+    if (shaConfig) cuerpo.sha = shaConfig;  // sin sha = crear el archivo
+    const resultado = await github(RUTA_CONFIG, { method: "PUT", body: JSON.stringify(cuerpo) });
+    shaConfig = resultado.content.sha;
+    estadoServidor.textContent = `Publicado ✓ ${new Date().toLocaleTimeString()}`;
+  } catch (e) {
+    if (e.estado === 409 || e.estado === 422) {
+      estadoServidor.textContent = "config.json cambió desde otro lado. Usá \"Traer servidor\" y volvé a intentar.";
+    } else {
+      estadoServidor.textContent = "No se pudo publicar: " + e.message;
+    }
+  }
+}
+
+document.getElementById("boton-traer-servidor").addEventListener("click", traerConfig);
+document.getElementById("boton-publicar-servidor").addEventListener("click", publicarConfig);
+
 // ================= Pestañas y buscador =================
 document.getElementById("pestana-simple").addEventListener("click", () => cambiarLista("simple"));
 document.getElementById("pestana-completa").addEventListener("click", () => cambiarLista("completa"));

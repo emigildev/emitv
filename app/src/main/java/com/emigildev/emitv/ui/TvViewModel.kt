@@ -18,6 +18,8 @@ import com.emigildev.emitv.data.resolver
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import android.widget.Toast
+import com.emigildev.emitv.data.ConfigRemota
 
 class TvViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -26,8 +28,10 @@ class TvViewModel(app: Application) : AndroidViewModel(app) {
     // De dónde sale la lista. Para cambiar a otra fuente, se cambia SOLO esta línea.
     private val fuente: FuenteRemota = FuenteGitHub(app)
 
+    private val configRepo = ConfigRepo(app)
+
     // Simple -> lista "simple"; Completo -> lista "completa".
-    private val modo = ConfigRepo(app).leer()?.modo ?: Modo.SIMPLE
+    private val modo = configRepo.leer()?.modo ?: Modo.SIMPLE
 
     // Último canal visto, por número y por modo (las dos listas tienen números distintos).
     private val claveUltimoCanal = "ultimo_numero_${modo.name.lowercase()}"
@@ -53,13 +57,19 @@ class TvViewModel(app: Application) : AndroidViewModel(app) {
         canales = Carga.Cargando
         viewModelScope.launch {
             try {
-                // Las dos descargas EN PARALELO: tu lista (GitHub) y el catálogo del proveedor.
-                // coroutineScope hace que, si una falla, el error llegue a nuestro catch.
-                val (listaRemota, catalogo) = coroutineScope {
+                // 1) En paralelo: tu lista y la configuración remota (las dos de GitHub).
+                val (listaRemota, configRemota) = coroutineScope {
                     val pedidoLista = async { fuente.obtenerLista() }
-                    val pedidoCatalogo = async { Xtream.todosLosCanales() }
-                    pedidoLista.await() to pedidoCatalogo.await()
+                    // Si config.json no existe o falla, seguimos con el servidor que ya teníamos.
+                    val pedidoConfig = async { runCatching { fuente.obtenerConfig() }.getOrNull() }
+                    pedidoLista.await() to pedidoConfig.await()
                 }
+
+                // 2) Si cambió el servidor, aplicarlo ANTES de pedirle los canales.
+                aplicarServidorRemoto(configRemota)
+
+                // 3) Los canales del proveedor, ya con el servidor correcto.
+                val catalogo = Xtream.todosLosCanales()
 
                 val items = if (modo == Modo.SIMPLE) listaRemota.simple else listaRemota.completa
                 val resueltos = resolver(items, catalogo)
@@ -71,6 +81,21 @@ class TvViewModel(app: Application) : AndroidViewModel(app) {
                 canales = Carga.Error(e.message ?: e.toString())
             }
         }
+    }
+
+    // Si config.json trae un servidor distinto al guardado en esta TV, lo adopta y avisa.
+    private fun aplicarServidorRemoto(remota: ConfigRemota?) {
+        val nuevo = remota?.servidor
+            ?.takeIf { it.isNotBlank() }
+            ?.let { Xtream.normalizar(it) }
+            ?: return
+        val actual = configRepo.leer() ?: return
+        if (Xtream.normalizar(actual.url) == nuevo) return
+
+        val actualizada = actual.copy(url = nuevo)
+        configRepo.guardar(actualizada)
+        Xtream.configurar(actualizada)
+        Toast.makeText(getApplication(), "Servidor actualizado: $nuevo", Toast.LENGTH_LONG).show()
     }
 
     fun siguiente() = mover(+1)

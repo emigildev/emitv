@@ -49,7 +49,10 @@ fun App() {
             // Un ViewModel por cuenta: si cerrás sesión y entrás con otra, no quedan sus canales viejos.
             vm = viewModel(key = "${actual.url}|${actual.usuario}|${actual.modo}"),
             mostrarDiagnostico = actual.diagnostico,
-            onAjustes = { enAjustes = true },
+            onAjustes = {
+                config = repo.leer()   // por si la TV adoptó un servidor remoto nuevo
+                enAjustes = true
+            },
         )
     }
 }

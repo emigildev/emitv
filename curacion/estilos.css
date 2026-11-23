@@ -154,3 +154,18 @@ button.con-respaldos { border-color: var(--acento); color: var(--acento); }
 }
 #boton-publicar { border-color: var(--acento); }
 #estado-github { color: var(--suave); min-height: 1.2em; }
+
+/* ---------- Servidor ---------- */
+#servidor { border-bottom: 1px solid #333; }
+#campo-servidor {
+  flex: 1;
+  min-width: 200px;
+  padding: 6px 10px;
+  background: var(--panel);
+  color: var(--texto);
+  border: 1px solid #444;
+  border-radius: 6px;
+  font: inherit;
+}
+#boton-publicar-servidor { border-color: #ff8a80; }  /* en rojo suave: afecta a todas las TVs */
+.ayuda, #estado-servidor { color: var(--suave); font-size: 0.9rem; }

@@ -23,6 +23,12 @@ data class ItemLista(
     val respaldos: List<Int> = emptyList(),
 )
 
+@Serializable
+data class ConfigRemota(
+    val version: Int = 1,
+    val servidor: String? = null,
+)
+
 val jsonLista = Json {
     ignoreUnknownKeys = true   // campos futuros (M3U, YouTube) no rompen versiones viejas de la app
     coerceInputValues = true
