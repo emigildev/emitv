@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T15:31:28.190Z",
+  "actualizado": "2026-11-23T16:16:55.754Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -213,6 +213,12 @@
       "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___",
       "nombre": "Canal 22 - WebTV - CABA TV Web - CD Cd Aut Bs As",
       "logo": "https://radiosargentina.com.ar/png/VI---C22.png"
+    },
+    {
+      "tipo": "youtube",
+      "video": "tInHlI4KdmQ",
+      "nombre": "El Destape",
+      "logo": "https://i.ytimg.com/vi/tInHlI4KdmQ/hqdefault.jpg"
     }
   ],
   "completa": [
@@ -397,6 +403,12 @@
         },
         130636
       ]
+    },
+    {
+      "tipo": "youtube",
+      "video": "tInHlI4KdmQ",
+      "nombre": "El Destape",
+      "logo": "https://i.ytimg.com/vi/tInHlI4KdmQ/hqdefault.jpg"
     },
     {
       "tipo": "xtream",
