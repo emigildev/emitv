@@ -205,7 +205,7 @@ button.peligro { border-color: var(--peligro); color: var(--peligro); }
   font-size: 0.8rem;
 }
 .acciones { display: flex; gap: 6px; flex-shrink: 0; }
-#lista-canales .acciones, .fila-respaldo button { order: 4; margin-left: auto; }
+#lista-canales .acciones, .fila-respaldo .acciones { order: 4; margin-left: auto; }
 
 /* ---------- Mi lista ---------- */
 .encabezado-lista { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
@@ -266,6 +266,13 @@ button.con-respaldos { border-color: var(--acento); color: var(--acento); }
   height: 20px;
   accent-color: var(--acento);
 }
+
+/* Panel de respaldos: subtítulos, buscador y filas que faltan */
+.panel-respaldos .encabezado-respaldos { margin-top: 10px; }
+.panel-respaldos .encabezado-respaldos:first-child { margin-top: 0; }
+.panel-respaldos .campo { margin: 4px 0 6px; }
+.panel-respaldos .ayuda { margin: 0 0 6px; }
+.fila-respaldo.faltante span { color: var(--peligro); }
 
 /* ---------- Fuentes M3U ---------- */
 #lista-fuentes li { padding: 8px 0; border-bottom: 1px solid var(--borde); }

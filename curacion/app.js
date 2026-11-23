@@ -51,24 +51,70 @@ function buscarCanal(id) {
   return canales.find(c => mismoId(c.stream_id, id));
 }
 
-// ¿Está ese canal en la lista, como principal o como respaldo?
-function estaEnLista(nombreLista, id) {
-  return listas[nombreLista].some(item =>
-    item.tipo === "xtream" &&
-    (mismoId(item.id, id) || (item.respaldos ?? []).some(r => mismoId(r, id)))
-  );
+// ================= Referencias a canales =================
+// Un canal (principal o respaldo) se identifica con una "referencia":
+//   - un número ............................ 130589  → canal del proveedor IPTV
+//   - un objeto { tipo: "m3u", fuente, clave } ...... → canal de una lista M3U
+// Los respaldos viejos (solo números) siguen funcionando tal cual.
+
+function refDeItem(item) {
+  return item.tipo === "m3u"
+    ? { tipo: "m3u", fuente: item.fuente, clave: item.clave }
+    : Number(item.id);
 }
 
-// ¿Está ese canal M3U en la lista?
-function estaEnListaM3u(nombreLista, fuente, clave) {
-  return listas[nombreLista].some(item =>
-    item.tipo === "m3u" && item.fuente === fuente && item.clave === clave
-  );
+// Referencia de un canal tal como se muestra en el catálogo (del proveedor o de una M3U).
+function refDeVista(canal) {
+  return canal.m3u
+    ? { tipo: "m3u", fuente: canal.m3u.fuente, clave: canal.m3u.clave }
+    : Number(canal.stream_id);
+}
+
+function mismaRef(a, b) {
+  const objetoA = typeof a === "object";
+  const objetoB = typeof b === "object";
+  if (objetoA && objetoB) return a.fuente === b.fuente && a.clave === b.clave;
+  if (!objetoA && !objetoB) return mismoId(a, b);
+  return false;  // uno del proveedor y otro de una M3U: nunca son el mismo
+}
+
+// Texto único de una referencia (para usar como clave, por ejemplo de un panel abierto).
+function textoRef(ref) {
+  return typeof ref === "object" ? `m3u:${ref.fuente}:${ref.clave}` : `xtream:${ref}`;
 }
 
 function buscarEntrada(fuente, clave) {
   return entradasM3u.find(e => e.fuente === fuente && e.clave === clave);
 }
+
+// Lo necesario para mostrar una referencia: nombre, logo, detalle, y si falta en lo cargado.
+function describirRef(ref) {
+  if (typeof ref === "object") {
+    const entrada = buscarEntrada(ref.fuente, ref.clave);
+    const fuenteCargada = entradasM3u.some(e => e.fuente === ref.fuente);
+    return {
+      nombre: entrada?.nombre ?? ref.clave,
+      logo: entrada?.logo,
+      detalle: `📡 ${ref.fuente}` + (entrada?.grupo ? ` · ${entrada.grupo}` : ""),
+      falta: fuenteCargada && !entrada,
+    };
+  }
+  const canal = buscarCanal(ref);
+  return {
+    nombre: canal?.name ?? `Canal ${ref}`,
+    logo: canal?.stream_icon,
+    detalle: `#${ref} · ` + (canal ? nombreCategoria(canal.category_id) : "no está en el catálogo"),
+    falta: canales.length > 0 && !canal,
+  };
+}
+
+// ¿Está ese canal en la lista, como principal o como respaldo de algún canal?
+function estaEnLista(nombreLista, ref) {
+  return listas[nombreLista].some(item =>
+    mismaRef(refDeItem(item), ref) || (item.respaldos ?? []).some(r => mismaRef(r, ref))
+  );
+}
+
 
 // ================= Repetidos =================
 // Palabras que NO cambian qué canal es: calidad, códecs, "backup", país...
@@ -107,11 +153,53 @@ function calcularGrupos() {
   }
 }
 
-// Las otras versiones del mismo canal (sin incluir el propio).
-function similares(id) {
-  const canal = buscarCanal(id);
-  if (!canal) return [];
-  return (grupos.get(claveBase(canal.name)) ?? []).filter(c => !mismoId(c.stream_id, id));
+// Listas como "Radios Argentinas" agregan datos después de un guion:
+// "Canal 22 - CTV - CABA TV Cable - …" -> "Canal 22"
+function nombreCorto(nombre) {
+  return String(nombre ?? "").split(" - ")[0];
+}
+
+// Índice de las entradas M3U por clave base. Se recalcula solo si cambiaron las entradas.
+let indiceM3u = { entradas: null, mapa: new Map() };
+
+function gruposM3u() {
+  if (indiceM3u.entradas !== entradasM3u) {
+    const mapa = new Map();
+    for (const entrada of entradasM3u) {
+      const clave = claveBase(nombreCorto(entrada.nombre));
+      if (!clave) continue;
+      if (!mapa.has(clave)) mapa.set(clave, []);
+      mapa.get(clave).push(entrada);
+    }
+    indiceM3u = { entradas: entradasM3u, mapa };
+  }
+  return indiceM3u.mapa;
+}
+
+// Versiones parecidas del canal de un ítem, en TODAS las fuentes (sin incluir su principal).
+// Devuelve canales "de vista", como los del catálogo.
+function similaresDe(item) {
+  const nombres = item.tipo === "m3u"
+    ? [buscarEntrada(item.fuente, item.clave)?.nombre, item.nombre]
+    : [buscarCanal(item.id)?.name, item.original, item.nombre];
+  const claves = new Set(nombres.filter(Boolean).map(n => claveBase(nombreCorto(n))).filter(Boolean));
+
+  const encontrados = [];
+  for (const clave of claves) {
+    encontrados.push(...(grupos.get(clave) ?? []));
+    encontrados.push(...(gruposM3u().get(clave) ?? []).map(comoCanal));
+  }
+
+  // Sin el principal y sin repetidos
+  const principal = refDeItem(item);
+  const vistos = new Set();
+  return encontrados.filter(canal => {
+    const ref = refDeVista(canal);
+    const texto = textoRef(ref);
+    if (vistos.has(texto) || mismaRef(ref, principal)) return false;
+    vistos.add(texto);
+    return true;
+  });
 }
 
 function crearLogo(url) {
@@ -224,62 +312,92 @@ function cargarCatalogoGuardado() {
 
 // ================= Acciones sobre la lista =================
 function agregar(nombreLista, canal) {
-  // Canal de una lista M3U
+  if (estaEnLista(nombreLista, refDeVista(canal))) return;
+
   if (canal.m3u) {
-    const { fuente, clave, nombre, logo } = canal.m3u;
-    if (estaEnListaM3u(nombreLista, fuente, clave)) return;
+    // Canal de una lista M3U.
     // Sin lo que va entre paréntesis o corchetes: "Encuentro (720p) [Geo-blocked]" -> "Encuentro"
-    const nombreLimpio = limpiar(nombre.replace(/\s*[\[(][^\])]*[\])]/g, ""));
-    listas[nombreLista].push({ tipo: "m3u", fuente, clave, nombre: nombreLimpio, logo });
-    huboCambio();
-    return;
-  }
-
-  // Canal del proveedor IPTV
-  if (estaEnLista(nombreLista, canal.stream_id)) return;
-  listas[nombreLista].push({
-    tipo: "xtream",
-    id: Number(canal.stream_id),
-    nombre: limpiar(canal.name),
-    original: canal.name,
-    respaldos: [],
-  });
-  huboCambio();
-}
-
-// Marca o desmarca un canal como respaldo de un ítem.
-function alternarRespaldo(item, id) {
-  item.respaldos = item.respaldos ?? [];
-  const posicion = item.respaldos.findIndex(r => mismoId(r, id));
-  if (posicion >= 0) {
-    item.respaldos.splice(posicion, 1);
+    const { fuente, clave, nombre, logo } = canal.m3u;
+    const nombreLimpio = limpiar(nombreCorto(nombre).replace(/\s*[\[(][^\])]*[\])]/g, ""));
+    listas[nombreLista].push({ tipo: "m3u", fuente, clave, nombre: nombreLimpio, logo, respaldos: [] });
   } else {
-    item.respaldos.push(Number(id));
+    // Canal del proveedor IPTV
+    listas[nombreLista].push({
+      tipo: "xtream",
+      id: Number(canal.stream_id),
+      nombre: limpiar(canal.name),
+      original: canal.name,
+      respaldos: [],
+    });
   }
   huboCambio();
 }
 
-// Todas las versiones similares pasan a ser respaldos.
-function usarTodosComoRespaldo(item) {
-  item.respaldos = similares(item.id).map(c => Number(c.stream_id));
+// ---------- Respaldos (de cualquier fuente) ----------
+function agregarRespaldo(item, ref) {
+  if (mismaRef(ref, refDeItem(item))) return;
+  item.respaldos = item.respaldos ?? [];
+  if (item.respaldos.some(r => mismaRef(r, ref))) return;
+  item.respaldos.push(ref);
   huboCambio();
 }
 
-// Intercambia: el respaldo pasa a ser el principal y el principal, el primer respaldo.
-function hacerPrincipal(item, id) {
-  const anterior = item.id;
-  const claveAnterior = `${listaActiva}:${anterior}`;
-  item.respaldos = (item.respaldos ?? []).filter(r => !mismoId(r, id));
-  item.respaldos.unshift(anterior);  // unshift = agregar al principio
-  item.id = Number(id);
-  item.original = buscarCanal(id)?.name ?? item.original;
-  // Mantener abierto el panel aunque cambió el id
-  if (panelesAbiertos.delete(claveAnterior)) panelesAbiertos.add(`${listaActiva}:${item.id}`);
+function quitarRespaldo(item, posicion) {
+  item.respaldos.splice(posicion, 1);
   huboCambio();
+}
+
+function moverRespaldo(item, posicion, paso) {
+  const respaldos = item.respaldos;
+  const destino = posicion + paso;
+  if (destino < 0 || destino >= respaldos.length) return;
+  [respaldos[posicion], respaldos[destino]] = [respaldos[destino], respaldos[posicion]];
+  huboCambio();
+}
+
+// Todos los sugeridos pasan a ser respaldos (después de los que ya había).
+function agregarSugeridos(item) {
+  item.respaldos = item.respaldos ?? [];
+  for (const canal of similaresDe(item)) {
+    const ref = refDeVista(canal);
+    if (!item.respaldos.some(r => mismaRef(r, ref))) item.respaldos.push(ref);
+  }
+  huboCambio();
+}
+
+// Intercambia: un respaldo pasa a ser el principal y el principal, el primer respaldo.
+// Si son de fuentes distintas, el canal cambia de tipo (por ejemplo, de "xtream" a "m3u").
+function hacerPrincipal(item, ref) {
+  const anterior = refDeItem(item);
+  const panelAbierto = panelesAbiertos.delete(clavePanel(item));
+  item.respaldos = [anterior, ...(item.respaldos ?? []).filter(r => !mismaRef(r, ref))];
+
+  if (typeof ref === "object") {
+    item.tipo = "m3u";
+    item.fuente = ref.fuente;
+    item.clave = ref.clave;
+    item.logo = buscarEntrada(ref.fuente, ref.clave)?.logo;
+    delete item.id;
+    delete item.original;
+  } else {
+    item.tipo = "xtream";
+    item.id = Number(ref);
+    item.original = buscarCanal(ref)?.name;
+    delete item.fuente;
+    delete item.clave;
+    delete item.logo;
+  }
+
+  if (panelAbierto) panelesAbiertos.add(clavePanel(item));  // mantenerlo abierto
+  huboCambio();
+}
+
+function clavePanel(item) {
+  return `${listaActiva}:${textoRef(refDeItem(item))}`;
 }
 
 function alternarPanel(item) {
-  const clave = `${listaActiva}:${item.id}`;
+  const clave = clavePanel(item);
   if (panelesAbiertos.has(clave)) panelesAbiertos.delete(clave);
   else panelesAbiertos.add(clave);
   mostrarLista();
@@ -309,7 +427,7 @@ function renombrar(indice, nuevoNombre) {
   } else {
     // Nombre vacío: volver al original del catálogo
     item.nombre = item.tipo === "m3u"
-      ? limpiar(buscarEntrada(item.fuente, item.clave)?.nombre ?? item.clave)
+      ? limpiar(nombreCorto(buscarEntrada(item.fuente, item.clave)?.nombre ?? item.clave))
       : limpiar(buscarCanal(item.id)?.name ?? `Canal ${item.id}`);
     huboCambio();
   }
@@ -476,9 +594,7 @@ function refrescarCanales() {
     const acciones = document.createElement("div");
     acciones.className = "acciones";
     for (const nombreLista of ["simple", "completa"]) {
-      const ya = canal.m3u
-        ? estaEnListaM3u(nombreLista, canal.m3u.fuente, canal.m3u.clave)
-        : estaEnLista(nombreLista, canal.stream_id);
+      const ya = estaEnLista(nombreLista, refDeVista(canal));
       acciones.append(
         crearBoton(
           `${ya ? "✓" : "+"} ${NOMBRES_LISTA[nombreLista]}`,
@@ -516,13 +632,9 @@ function mostrarLista() {
   }
 
   lista.forEach((item, i) => {
-    if (item.tipo === "m3u") {
-      ul.appendChild(filaM3u(item, i, lista.length));
-      return;
-    }
-    const original = buscarCanal(item.id);  // puede ser undefined si ya no existe
+    const principal = describirRef(refDeItem(item));
     const li = document.createElement("li");
-    if (canales.length > 0 && !original) li.classList.add("faltante");
+    if (principal.falta) li.classList.add("faltante");
 
     const numero = document.createElement("span");
     numero.className = "numero";
@@ -531,110 +643,144 @@ function mostrarLista() {
     // El nombre se edita ahí mismo. "change" se dispara al salir del campo o con Enter.
     const campo = document.createElement("input");
     campo.value = item.nombre;
-    campo.title = original
-      ? `Original: ${limpiar(original.name)} · #${item.id}`
-      : `#${item.id} — no está en el catálogo actual`;
+    campo.title = `Original: ${principal.nombre} · ${principal.detalle}` +
+      (principal.falta ? " — no está en lo cargado" : "");
     campo.addEventListener("change", () => renombrar(i, campo.value));
 
-    const otros = similares(item.id);
-    const cantidadRespaldos = (item.respaldos ?? []).length;
-    const abierto = panelesAbiertos.has(`${listaActiva}:${item.id}`);
+    const cantidad = (item.respaldos ?? []).length;
+    const abierto = panelesAbiertos.has(clavePanel(item));
 
     const acciones = document.createElement("div");
     acciones.className = "acciones";
-    if (otros.length > 0 || cantidadRespaldos > 0) {
-      const boton = crearBoton(
-        `Respaldos ${cantidadRespaldos}/${otros.length} ${abierto ? "▴" : "▾"}`,
-        () => alternarPanel(item),
-      );
-      if (cantidadRespaldos > 0) boton.classList.add("con-respaldos");
-      acciones.append(boton);
+    if (item.tipo === "m3u") {
+      const etiqueta = document.createElement("span");
+      etiqueta.className = "etiqueta-fuente";
+      etiqueta.textContent = `📡 ${item.fuente}`;
+      acciones.append(etiqueta);
     }
+    const botonRespaldos = crearBoton(
+      `Respaldos ${cantidad} ${abierto ? "▴" : "▾"}`,
+      () => alternarPanel(item),
+    );
+    if (cantidad > 0) botonRespaldos.classList.add("con-respaldos");
     acciones.append(
+      botonRespaldos,
       crearBoton("↑", () => mover(i, -1), i === 0),
       crearBoton("↓", () => mover(i, +1), i === lista.length - 1),
       crearBoton("✕", () => quitar(i)),
     );
 
-    // "?." (optional chaining): si original es undefined, no falla y da undefined.
-    li.append(numero, crearLogo(original?.stream_icon), campo, acciones);
+    li.append(numero, crearLogo(principal.logo || item.logo), campo, acciones);
     ul.appendChild(li);
 
-    if (abierto) ul.appendChild(crearPanelRespaldos(item, otros));
+    if (abierto) ul.appendChild(crearPanelRespaldos(item));
   });
 }
 
-// Fila de "Mi lista" para un canal de una lista M3U (sin respaldos, por ahora).
-function filaM3u(item, i, total) {
-  const entrada = buscarEntrada(item.fuente, item.clave);
-  const fuenteCargada = entradasM3u.some(e => e.fuente === item.fuente);
-  const li = document.createElement("li");
-  if (fuenteCargada && !entrada) li.classList.add("faltante");
+// Lo escrito en el buscador de respaldos de cada panel (para no perderlo al redibujar).
+const busquedasRespaldo = new Map();
 
-  const numero = document.createElement("span");
-  numero.className = "numero";
-  numero.textContent = i + 1;
+// Una fila con logo, nombre y detalle de una referencia, más los botones que se pasen.
+function crearFilaRef(ref, ...botones) {
+  const datos = describirRef(ref);
+  const fila = document.createElement("div");
+  fila.className = "fila-respaldo";
+  if (datos.falta) fila.classList.add("faltante");
 
-  const campo = document.createElement("input");
-  campo.value = item.nombre;
-  campo.title = `📡 ${item.fuente} · ${item.clave}` + (fuenteCargada && !entrada ? " — no está en la lista M3U" : "");
-  campo.addEventListener("change", () => renombrar(i, campo.value));
+  const nombre = document.createElement("span");
+  nombre.textContent = limpiar(datos.nombre);
+
+  const detalle = document.createElement("small");
+  detalle.textContent = datos.detalle + (datos.falta ? " · no está en lo cargado" : "");
 
   const acciones = document.createElement("div");
   acciones.className = "acciones";
-  const etiqueta = document.createElement("span");
-  etiqueta.className = "etiqueta-fuente";
-  etiqueta.textContent = `📡 ${item.fuente}`;
-  acciones.append(
-    etiqueta,
-    crearBoton("↑", () => mover(i, -1), i === 0),
-    crearBoton("↓", () => mover(i, +1), i === total - 1),
-    crearBoton("✕", () => quitar(i)),
-  );
+  acciones.append(...botones);
 
-  li.append(numero, crearLogo(entrada?.logo || item.logo), campo, acciones);
-  return li;
+  fila.append(crearLogo(datos.logo), nombre, detalle, acciones);
+  return fila;
 }
 
-// Panel debajo de un canal: sus otras versiones, para elegir respaldos o cambiar el principal.
-function crearPanelRespaldos(item, otros) {
+function crearSubtitulo(texto, ...botones) {
+  const div = document.createElement("div");
+  div.className = "encabezado-respaldos";
+  const span = document.createElement("span");
+  span.textContent = texto;
+  div.append(span, ...botones);
+  return div;
+}
+
+// Panel debajo de un canal: sus respaldos (de cualquier fuente), sugerencias y un buscador.
+function crearPanelRespaldos(item) {
   const li = document.createElement("li");
   li.className = "panel-respaldos";
+  const respaldos = item.respaldos ?? [];
 
-  const encabezado = document.createElement("div");
-  encabezado.className = "encabezado-respaldos";
-  encabezado.textContent = "Si el principal falla, la app prueba los respaldos en este orden.";
-  encabezado.append(crearBoton("Usar todos", () => usarTodosComoRespaldo(item)));
-  li.append(encabezado);
-
-  // Primero los respaldos elegidos (en su orden), después el resto.
-  const elegidos = (item.respaldos ?? []).map(r => buscarCanal(r) ?? { stream_id: r, name: `Canal ${r}` });
-  const resto = otros.filter(c => !(item.respaldos ?? []).some(r => mismoId(r, c.stream_id)));
-
-  for (const canal of [...elegidos, ...resto]) {
-    const fila = document.createElement("div");
-    fila.className = "fila-respaldo";
-
-    const marca = document.createElement("input");
-    marca.type = "checkbox";
-    marca.checked = (item.respaldos ?? []).some(r => mismoId(r, canal.stream_id));
-    marca.addEventListener("change", () => alternarRespaldo(item, canal.stream_id));
-
-    const nombre = document.createElement("span");
-    nombre.textContent = limpiar(canal.name);
-
-    const detalle = document.createElement("small");
-    detalle.textContent = `#${canal.stream_id} · ${nombreCategoria(canal.category_id)}`;
-
-    fila.append(
-      marca,
-      crearLogo(canal.stream_icon),
-      nombre,
-      detalle,
-      crearBoton("Hacer principal", () => hacerPrincipal(item, canal.stream_id)),
-    );
-    li.append(fila);
+  // 1) Respaldos elegidos, en orden
+  li.append(crearSubtitulo("Respaldos — si el principal falla, se prueban de arriba hacia abajo"));
+  if (respaldos.length === 0) {
+    const vacio = document.createElement("p");
+    vacio.className = "ayuda";
+    vacio.textContent = "Todavía no tiene respaldos. Agregalos desde las sugerencias o el buscador.";
+    li.append(vacio);
   }
+  respaldos.forEach((ref, i) => {
+    li.append(crearFilaRef(ref,
+      crearBoton("↑", () => moverRespaldo(item, i, -1), i === 0),
+      crearBoton("↓", () => moverRespaldo(item, i, +1), i === respaldos.length - 1),
+      crearBoton("Principal", () => hacerPrincipal(item, ref)),
+      crearBoton("✕", () => quitarRespaldo(item, i)),
+    ));
+  });
+
+  // 2) Sugeridos: versiones parecidas en todas las fuentes
+  const sugeridos = similaresDe(item).filter(canal =>
+    !respaldos.some(r => mismaRef(r, refDeVista(canal)))
+  );
+  if (sugeridos.length > 0) {
+    li.append(crearSubtitulo(`Sugeridos (${sugeridos.length})`,
+      crearBoton("Agregar todos", () => agregarSugeridos(item))));
+    for (const canal of sugeridos) {
+      const ref = refDeVista(canal);
+      li.append(crearFilaRef(ref, crearBoton("+ Respaldo", () => agregarRespaldo(item, ref))));
+    }
+  }
+
+  // 3) Buscador en todas las fuentes, para agregar a mano lo que no se detectó solo
+  li.append(crearSubtitulo("Buscar en todas las fuentes"));
+  const clave = clavePanel(item);
+  const buscador = document.createElement("input");
+  buscador.type = "search";
+  buscador.className = "campo";
+  buscador.placeholder = "Por ejemplo: TN";
+  buscador.value = busquedasRespaldo.get(clave) ?? "";
+  const resultados = document.createElement("div");
+
+  function buscar() {
+    busquedasRespaldo.set(clave, buscador.value);
+    resultados.innerHTML = "";
+    const texto = buscador.value.trim().toLowerCase();
+    if (texto.length < 2) return;
+    const coincide = nombre => limpiar(nombre).toLowerCase().includes(texto);
+    const encontrados = [
+      ...canales.filter(c => coincide(c.name)),
+      ...entradasM3u.filter(e => coincide(e.nombre)).map(comoCanal),
+    ]
+      .map(refDeVista)
+      .filter(ref => !mismaRef(ref, refDeItem(item)) && !respaldos.some(r => mismaRef(r, ref)))
+      .slice(0, 30);
+    if (encontrados.length === 0) {
+      resultados.textContent = "Sin resultados.";
+      return;
+    }
+    for (const ref of encontrados) {
+      resultados.append(crearFilaRef(ref, crearBoton("+ Respaldo", () => agregarRespaldo(item, ref))));
+    }
+  }
+
+  buscador.addEventListener("input", buscar);
+  li.append(buscador, resultados);
+  buscar();  // si había algo escrito, mostrar sus resultados
   return li;
 }
 
@@ -652,21 +798,21 @@ function revisarListas() {
 
     lista.forEach((item, i) => {
       const donde = `${etiqueta} ${i + 1} "${item.nombre}"`;
-      if (item.tipo === "m3u") {
-        if (!listas.fuentes[item.fuente]) {
-          avisos.push(`${donde}: la fuente "${item.fuente}" no está en Ajustes → Fuentes M3U.`);
-        } else if (entradasM3u.some(e => e.fuente === item.fuente) && !buscarEntrada(item.fuente, item.clave)) {
-          avisos.push(`${donde}: ya no aparece en la lista M3U "${item.fuente}".`);
+
+      // Fuentes M3U que no están configuradas (principal o respaldos)
+      const refs = [refDeItem(item), ...(item.respaldos ?? [])];
+      for (const ref of refs) {
+        if (typeof ref === "object" && !listas.fuentes[ref.fuente]) {
+          avisos.push(`${donde}: usa la fuente "${ref.fuente}", que no está en Ajustes → Fuentes M3U.`);
         }
-        return;
       }
-      if (item.tipo !== "xtream") return;
-      if (!buscarCanal(item.id)) {
-        avisos.push(`${donde}: el canal #${item.id} no está en el catálogo.`);
+
+      if (describirRef(refDeItem(item)).falta) {
+        avisos.push(`${donde}: el canal principal no está en lo cargado.`);
       }
-      const perdidos = (item.respaldos ?? []).filter(r => !buscarCanal(r));
+      const perdidos = (item.respaldos ?? []).filter(r => describirRef(r).falta);
       if (perdidos.length > 0) {
-        avisos.push(`${donde}: ${perdidos.length} respaldo(s) no están en el catálogo.`);
+        avisos.push(`${donde}: ${perdidos.length} respaldo(s) no están en lo cargado.`);
       }
     });
   }
@@ -1222,8 +1368,11 @@ function agregarFuente() {
 }
 
 function quitarFuente(fuente) {
-  const enUso = ["simple", "completa"].some(l => listas[l].some(i => i.tipo === "m3u" && i.fuente === fuente));
-  if (enUso && !confirm(`Hay canales de "${fuente}" en tus listas. Si la quitás, la app no va a poder reproducirlos. ¿Quitarla igual?`)) {
+  const usaFuente = ref => typeof ref === "object" && ref.fuente === fuente;
+  const enUso = ["simple", "completa"].some(l =>
+    listas[l].some(i => usaFuente(refDeItem(i)) || (i.respaldos ?? []).some(usaFuente))
+  );
+  if (enUso && !confirm(`Hay canales o respaldos de "${fuente}" en tus listas. Si la quitás, la app no va a poder reproducirlos. ¿Quitarla igual?`)) {
     return;
   }
   const { [fuente]: _, ...resto } = listas.fuentes;  // copia sin esa fuente

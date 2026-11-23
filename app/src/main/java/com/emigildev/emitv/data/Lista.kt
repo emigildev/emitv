@@ -2,6 +2,12 @@ package com.emigildev.emitv.data
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import java.text.Normalizer
 
 // ---------- Formato de lista.json (lo que publica la página de curación) ----------
@@ -22,12 +28,26 @@ data class ItemLista(
     // --- tipo "xtream" ---
     val id: Int? = null,
     val original: String? = null,      // nombre en el proveedor, para buscarlo si cambia el id
-    val respaldos: List<Int> = emptyList(),
     // --- tipo "m3u" ---
     val fuente: String? = null,        // qué lista M3U (una de "fuentes")
     val clave: String? = null,         // tvg-id del canal, o su URL si no tiene
     val logo: String? = null,
+    // --- cualquier tipo ---
+    // Cada respaldo puede ser un número (canal del proveedor IPTV)
+    // o un objeto { "tipo": "m3u", "fuente": "...", "clave": "..." }.
+    // Por eso se leen como JsonElement: "cualquier valor JSON".
+    val respaldos: List<JsonElement> = emptyList(),
 )
+
+/** Las fuentes M3U que usa una lista, como canal principal o como respaldo. */
+fun fuentesUsadas(items: List<ItemLista>): Set<String> = buildSet {
+    for (item in items) {
+        if (item.tipo == "m3u") item.fuente?.let { add(it) }
+        for (respaldo in item.respaldos) {
+            (respaldo as? JsonObject)?.get("fuente")?.jsonPrimitive?.contentOrNull?.let { add(it) }
+        }
+    }
+}
 
 @Serializable
 data class ConfigRemota(
@@ -103,48 +123,71 @@ fun resolver(
         return porClave[clave]?.firstOrNull()
     }
 
+    // Entradas de una M3U: por clave (tvg-id o URL) y, si no hay y se da un nombre, por nombre.
+    fun entradasM3u(fuente: String?, clave: String?, nombre: String?): List<EntradaM3u> {
+        val entradas = listasM3u[fuente].orEmpty()
+        val porClaveM3u = entradas.filter { it.clave == clave }
+        if (porClaveM3u.isNotEmpty() || nombre == null) return porClaveM3u
+        val claveNombre = claveBase(nombre)
+        return if (claveNombre.isEmpty()) emptyList()
+        else entradas.filter { claveBase(it.nombre) == claveNombre }
+    }
+
+    fun senalesM3u(fuente: String?, clave: String?, nombre: String?): List<Senal> =
+        entradasM3u(fuente, clave, nombre)
+            .map { Senal.Directa(it.url, it.cabeceras) }
+            .ifEmpty {
+                // Si la lista no se pudo leer pero la clave ES una URL, se usa directo
+                listOfNotNull(clave?.takeIf { it.startsWith("http") }?.let { Senal.Directa(it) })
+            }
+
+    // Un respaldo: número (proveedor IPTV) u objeto { tipo, fuente, clave } / { tipo, id }.
+    fun senalesDe(respaldo: JsonElement): List<Senal> = when (respaldo) {
+        is JsonPrimitive -> listOfNotNull(respaldo.intOrNull?.let { porId[it] }?.let { Senal.DeXtream(it) })
+        is JsonObject -> {
+            fun texto(campo: String) = respaldo[campo]?.jsonPrimitive?.contentOrNull
+            when (texto("tipo")) {
+                "m3u" -> senalesM3u(texto("fuente"), texto("clave"), nombre = null)
+                "xtream" -> listOfNotNull(texto("id")?.toIntOrNull()?.let { porId[it] }?.let { Senal.DeXtream(it) })
+                else -> emptyList()
+            }
+        }
+        else -> emptyList()
+    }
+
+    fun logoDe(senal: Senal): String? = (senal as? Senal.DeXtream)?.canal?.logo
+
     return items.mapIndexedNotNull { i, item ->
         val numero = i + 1
-        when (item.tipo) {
+
+        // 1) El canal principal, según su tipo
+        val (principales, logo) = when (item.tipo) {
             "xtream" -> {
-                val respaldos = item.respaldos.mapNotNull { porId[it] }
-                val principal = item.id?.let { porId[it] }   // 1) por id
-                    ?: buscarPorNombre(item.original)          // 2) por nombre original
-                    ?: buscarPorNombre(item.nombre)            // 3) por el nombre que le pusiste
-                    ?: respaldos.firstOrNull()                 // 4) el primer respaldo
-                    ?: return@mapIndexedNotNull null           // 5) no hay forma: se omite
-                CanalEnLista(
-                    numero = numero,
-                    nombre = item.nombre,
-                    logo = principal.logo,
-                    principal = Senal.DeXtream(principal),
-                    respaldos = respaldos.filter { it.id != principal.id }.map { Senal.DeXtream(it) },
-                )
+                val canal = item.id?.let { porId[it] }   // por id
+                    ?: buscarPorNombre(item.original)      // por nombre original
+                    ?: buscarPorNombre(item.nombre)        // por el nombre que le pusiste
+                listOfNotNull(canal?.let { Senal.DeXtream(it) }) to canal?.logo
             }
-
             "m3u" -> {
-                val entradas = listasM3u[item.fuente].orEmpty()
-                val claveNombre = claveBase(item.nombre)
-                // 1) por clave (tvg-id o URL); 2) si no, por nombre
-                val coincidencias = entradas.filter { it.clave == item.clave }.ifEmpty {
-                    if (claveNombre.isEmpty()) emptyList()
-                    else entradas.filter { claveBase(it.nombre) == claveNombre }
-                }
-                val senales = coincidencias.map { Senal.Directa(it.url, it.cabeceras) }.ifEmpty {
-                    // 3) si la lista no se pudo leer pero la clave ES una URL, se usa directo
-                    listOfNotNull(item.clave?.takeIf { it.startsWith("http") }?.let { Senal.Directa(it) })
-                }
-                if (senales.isEmpty()) return@mapIndexedNotNull null
-                CanalEnLista(
-                    numero = numero,
-                    nombre = item.nombre,
-                    logo = coincidencias.firstOrNull()?.logo ?: item.logo,
-                    principal = senales.first(),
-                    respaldos = senales.drop(1),   // mismo canal repetido en la lista = respaldo
-                )
+                val entradas = entradasM3u(item.fuente, item.clave, item.nombre)
+                senalesM3u(item.fuente, item.clave, item.nombre) to (entradas.firstOrNull()?.logo ?: item.logo)
             }
-
-            else -> null   // YouTube y otros tipos: más adelante
+            else -> return@mapIndexedNotNull null   // YouTube y otros tipos: más adelante
         }
+
+        // 2) Los respaldos, de cualquier fuente y en el orden que elegiste
+        val respaldos = item.respaldos.flatMap { senalesDe(it) }
+
+        // 3) Todo junto, sin repetidos. Si el principal no está, el primer respaldo toma su lugar.
+        val todas = (principales + respaldos).distinct()
+        if (todas.isEmpty()) return@mapIndexedNotNull null
+
+        CanalEnLista(
+            numero = numero,
+            nombre = item.nombre,
+            logo = logo ?: logoDe(todas.first()),
+            principal = todas.first(),
+            respaldos = todas.drop(1),
+        )
     }
 }

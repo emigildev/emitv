@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import android.widget.Toast
 import com.emigildev.emitv.data.ConfigRemota
 import com.emigildev.emitv.data.ListasM3u
+import com.emigildev.emitv.data.fuentesUsadas
 
 class TvViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -75,10 +76,10 @@ class TvViewModel(app: Application) : AndroidViewModel(app) {
 
                 // 3) En paralelo: el catálogo del proveedor y las listas M3U que usa tu lista.
                 //    Si una falla, seguimos con las demás: un problema en una no deja sin TV.
-                val fuentesUsadas = items.filter { it.tipo == "m3u" }.mapNotNull { it.fuente }.toSet()
+                val usadas = fuentesUsadas(items)
                 val (catalogo, m3u) = coroutineScope {
                     val pedidoCatalogo = async { runCatching { Xtream.todosLosCanales() } }
-                    val pedidosM3u = fuentesUsadas.associateWith { nombreFuente ->
+                    val pedidosM3u = usadas.associateWith { nombreFuente ->
                         async {
                             val url = listaRemota.fuentes[nombreFuente]
                             if (url == null) emptyList()
