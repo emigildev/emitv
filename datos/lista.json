@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T16:16:55.754Z",
+  "actualizado": "2026-11-23T16:19:21.436Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -219,6 +219,11 @@
       "video": "tInHlI4KdmQ",
       "nombre": "El Destape",
       "logo": "https://i.ytimg.com/vi/tInHlI4KdmQ/hqdefault.jpg"
+    },
+    {
+      "tipo": "youtube",
+      "canal": "UCUzonpa3XKurQVycdMY70XQ",
+      "nombre": "Canal 10"
     }
   ],
   "completa": [
@@ -569,6 +574,11 @@
       "respaldos": [
         365815
       ]
+    },
+    {
+      "tipo": "youtube",
+      "canal": "UCUzonpa3XKurQVycdMY70XQ",
+      "nombre": "Canal 10"
     }
   ]
 }
