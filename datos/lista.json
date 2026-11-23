@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T05:04:58.313Z",
+  "actualizado": "2026-11-23T05:09:14.729Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -306,6 +306,13 @@
       "original": "AR | T n t Sp0rts 1"
     },
     {
+      "tipo": "m3u",
+      "fuente": "iptv-org",
+      "clave": "Canal22.ar@SD",
+      "nombre": "Canal 22",
+      "logo": "https://i.imgur.com/R4wXVxf.png"
+    },
+    {
       "tipo": "xtream",
       "id": 130646,
       "nombre": "AR T n t Sp0rts 2",
@@ -318,13 +325,6 @@
       "original": "AR |**Premium**OPC. 1"
     },
     {
-      "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___",
-      "nombre": "Canal 22",
-      "logo": "https://radiosargentina.com.ar/png/VI---C22.png"
-    },
-    {
       "tipo": "xtream",
       "id": 379757,
       "nombre": "VENEZUELA Telesur",
@@ -332,24 +332,17 @@
     },
     {
       "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.5RT________",
-      "nombre": "RT - 25.5TV - CABA TV TDA - CD Cd Aut Bs As",
-      "logo": "https://radiosargentina.com.ar/png/VI----RT.png"
-    },
-    {
-      "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.6CANAL-E___",
-      "nombre": "Canal-E - 25.6TV - CABA TV TDA - CD Cd Aut Bs As",
-      "logo": "https://radiosargentina.com.ar/png/VICANALE.png"
-    },
-    {
-      "tipo": "m3u",
       "fuente": "iptv-org",
       "clave": "Canal26.ar@SD",
       "nombre": "Canal 26",
       "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Canal_26_logo_%282022%29.svg/500px-Canal_26_logo_%282022%29.svg.png"
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__25.5RT________",
+      "nombre": "RT - 25.5TV - CABA TV TDA - CD Cd Aut Bs As",
+      "logo": "https://radiosargentina.com.ar/png/VI----RT.png"
     }
   ]
 }
