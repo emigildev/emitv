@@ -155,9 +155,10 @@ function hayPendiente() {
   return localStorage.getItem(CLAVE_PENDIENTE) === "1";
 }
 
-// Guarda una copia LIVIANA del catálogo: solo los campos que usamos.
-function guardarCatalogo() {
-  const liviano = {
+// Versión LIVIANA del catálogo: solo los campos que usamos.
+// (La usan el guardado en el navegador y la publicación en GitHub.)
+function catalogoLiviano() {
+  return {
     fecha: new Date().toISOString(),
     categorias: categorias.map(c => ({
       category_id: c.category_id,
@@ -170,8 +171,12 @@ function guardarCatalogo() {
       category_id: c.category_id,
     })),
   };
+}
+
+// Guarda en el navegador la copia liviana del catálogo.
+function guardarCatalogo() {
   try {
-    localStorage.setItem(CLAVE_CATALOGO, JSON.stringify(liviano));
+    localStorage.setItem(CLAVE_CATALOGO, JSON.stringify(catalogoLiviano()));
     return true;
   } catch (e) {
     console.warn("No se pudo guardar el catálogo (¿demasiado grande?):", e);
@@ -651,9 +656,19 @@ const REPO = "emigildev/emitv";
 const RUTA_LISTA = "datos/lista.json";
 const CLAVE_TOKEN = "emitv-token";
 
-// "sha" = la huella de la versión del archivo en GitHub que tenemos.
+const RUTA_CATALOGO = "datos/catalogo.json";
+const CLAVE_SHA_LISTA = "emitv-sha-lista";
+const CLAVE_SHA_CATALOGO = "emitv-sha-catalogo";
+
+// "sha" = la huella de la versión del archivo en GitHub en la que se basa tu lista.
 // GitHub la pide al publicar, para no pisar cambios hechos desde otro lado.
-let shaLista = null;
+// Se guarda en el navegador: así podés publicar aunque hayas cerrado la pestaña.
+let shaLista = localStorage.getItem(CLAVE_SHA_LISTA);
+
+function guardarShaLista(sha) {
+  shaLista = sha;
+  localStorage.setItem(CLAVE_SHA_LISTA, sha);
+}
 
 const campoToken = document.getElementById("campo-token");
 const estadoGitHub = document.getElementById("estado-github");
@@ -672,13 +687,15 @@ function mostrarEstadoToken() {
   campoToken.placeholder = token() ? "Token guardado en este navegador ✓" : "Pegá acá tu token de GitHub";
 }
 
-// Llama a la API de GitHub para un archivo del repo. Lanza un error con .estado si falla.
-async function github(ruta, opciones = {}) {
+// Llama a la API de GitHub para un archivo (o carpeta) del repo. Lanza un error con .estado si falla.
+// Con crudo = true devuelve el contenido del archivo como texto, tal cual
+// (sirve también para archivos grandes, de más de 1 MB).
+async function github(ruta, opciones = {}, crudo = false) {
   const respuesta = await fetch(`https://api.github.com/repos/${REPO}/contents/${ruta}`, {
     ...opciones,
     cache: "no-store",  // siempre la versión más nueva, nada de copias viejas
     headers: {
-      "Accept": "application/vnd.github+json",
+      "Accept": crudo ? "application/vnd.github.raw+json" : "application/vnd.github+json",
       ...(token() ? { "Authorization": `Bearer ${token()}` } : {}),
     },
   });
@@ -688,7 +705,14 @@ async function github(ruta, opciones = {}) {
     error.estado = respuesta.status;
     throw error;
   }
-  return respuesta.json();
+  return crudo ? respuesta.text() : respuesta.json();
+}
+
+// Las huellas (sha) de los archivos de datos/, SIN descargar su contenido.
+// Sirve para saber rápido qué cambió en GitHub: { "datos/lista.json": "a1b2…", ... }
+async function shasRemotos() {
+  const archivos = await github("datos");
+  return Object.fromEntries(archivos.map(a => [a.path, a.sha]));
 }
 
 // GitHub guarda el contenido en Base64. Estas dos funciones convierten
@@ -706,14 +730,14 @@ function desdeBase64(base64) {
   return new TextDecoder().decode(bytes);
 }
 
-async function traerDeGitHub() {
+async function traerDeGitHub({ preguntar = true } = {}) {
   mostrarEstadoGitHub("Trayendo la lista de GitHub…");
   try {
     const archivo = await github(RUTA_LISTA);
     const datos = JSON.parse(desdeBase64(archivo.content));
     validarLista(datos);
-    if (aplicarLista(datos, "GitHub")) {
-      shaLista = archivo.sha;
+    if (aplicarLista(datos, "GitHub", preguntar)) {
+      guardarShaLista(archivo.sha);
       marcarPendiente(false);
       const fecha = datos.actualizado ? new Date(datos.actualizado).toLocaleString() : "fecha desconocida";
       mostrarEstadoGitHub(`Lista traída de GitHub ✓ (publicada el ${fecha})`);
@@ -748,7 +772,7 @@ async function publicarEnGitHub() {
         sha: shaLista,
       }),
     });
-    shaLista = resultado.content.sha;
+    guardarShaLista(resultado.content.sha);
     marcarPendiente(false);
     mostrarEstadoGitHub(`Publicada ✓ ${new Date().toLocaleTimeString()} — las TVs la toman la próxima vez que se abra la app.`);
   } catch (e) {
@@ -774,7 +798,7 @@ document.getElementById("boton-olvidar-token").addEventListener("click", () => {
   mostrarEstadoToken();
   mostrarEstadoGitHub("Token borrado de este navegador.");
 });
-document.getElementById("boton-traer").addEventListener("click", traerDeGitHub);
+document.getElementById("boton-traer").addEventListener("click", () => traerDeGitHub());
 document.getElementById("boton-publicar").addEventListener("click", publicarEnGitHub);
 mostrarEstadoToken();
 
@@ -854,6 +878,107 @@ async function publicarConfig() {
 document.getElementById("boton-traer-servidor").addEventListener("click", traerConfig);
 document.getElementById("boton-publicar-servidor").addEventListener("click", publicarConfig);
 
+// ================= Catálogo en GitHub =================
+function mostrarEstadoCatalogo(texto) {
+  estadoCarga.textContent = texto;
+  if (texto) notificar(texto);
+}
+
+// Sube la versión liviana del catálogo a datos/catalogo.json (desde la PC).
+async function publicarCatalogo() {
+  if (!token()) {
+    alert("Primero guardá tu token de GitHub.");
+    return;
+  }
+  if (canales.length === 0) {
+    alert("Primero cargá los archivos del catálogo.");
+    return;
+  }
+  if (!confirm(`Se va a publicar el catálogo (${canales.length} canales) en GitHub. ¿Seguir?`)) return;
+
+  mostrarEstadoCatalogo("Publicando el catálogo…");
+  try {
+    const shas = await shasRemotos();
+    const cuerpo = {
+      message: `Catálogo actualizado (${canales.length} canales)`,
+      content: aBase64(JSON.stringify(catalogoLiviano())),
+    };
+    if (shas[RUTA_CATALOGO]) cuerpo.sha = shas[RUTA_CATALOGO];  // si ya existe, se reemplaza
+    const resultado = await github(RUTA_CATALOGO, { method: "PUT", body: JSON.stringify(cuerpo) });
+    localStorage.setItem(CLAVE_SHA_CATALOGO, resultado.content.sha);
+    mostrarEstadoCatalogo(`Catálogo publicado ✓ (${canales.length} canales)`);
+  } catch (e) {
+    mostrarEstadoCatalogo("No se pudo publicar el catálogo: " + e.message);
+  }
+}
+
+// Trae datos/catalogo.json y lo usa como catálogo de esta página.
+async function traerCatalogo(sha) {
+  mostrarEstadoCatalogo("Trayendo el catálogo de GitHub…");
+  const texto = await github(RUTA_CATALOGO, {}, true);
+  const datos = JSON.parse(texto);
+  categorias = datos.categorias;
+  canales = datos.canales;
+  calcularGrupos();
+  try {
+    localStorage.setItem(CLAVE_CATALOGO, texto);
+    if (sha) localStorage.setItem(CLAVE_SHA_CATALOGO, sha);
+  } catch (e) {
+    console.warn("No se pudo guardar el catálogo en el navegador:", e);
+  }
+  mostrarCategorias();
+  actualizar();
+  const fecha = datos.fecha ? new Date(datos.fecha).toLocaleString() : "fecha desconocida";
+  mostrarEstadoCatalogo(`Catálogo de GitHub ✓ (${canales.length} canales, del ${fecha})`);
+}
+
+document.getElementById("boton-publicar-catalogo").addEventListener("click", publicarCatalogo);
+document.getElementById("boton-traer-catalogo").addEventListener("click", async () => {
+  try {
+    const shas = await shasRemotos();
+    await traerCatalogo(shas[RUTA_CATALOGO]);
+  } catch (e) {
+    mostrarEstadoCatalogo(e.estado === 404
+      ? "Todavía no hay un catálogo publicado en GitHub."
+      : "No se pudo traer el catálogo: " + e.message);
+  }
+});
+
+// ================= Sincronización al abrir la página =================
+// Trae de GitHub lo que haya cambiado, sin pisar cambios tuyos sin publicar.
+async function sincronizarAlAbrir() {
+  let shas;
+  try {
+    shas = await shasRemotos();
+  } catch (e) {
+    notificar("Sin conexión con GitHub: se usa lo guardado en este navegador.");
+    return;
+  }
+
+  // 1) Catálogo: si en GitHub hay uno distinto al que tenemos, traerlo.
+  const shaCatalogo = shas[RUTA_CATALOGO];
+  if (shaCatalogo && shaCatalogo !== localStorage.getItem(CLAVE_SHA_CATALOGO)) {
+    try {
+      await traerCatalogo(shaCatalogo);
+    } catch (e) {
+      console.warn("No se pudo traer el catálogo:", e);
+    }
+  }
+
+  // 2) Lista: si cambió en GitHub, traerla… salvo que tengas cambios sin publicar.
+  const shaListaRemota = shas[RUTA_LISTA];
+  if (shaListaRemota && shaListaRemota !== shaLista) {
+    if (hayPendiente()) {
+      notificar("⚠ Tenés cambios sin publicar y la lista en GitHub también cambió.");
+    } else {
+      await traerDeGitHub({ preguntar: false });
+    }
+  }
+
+  // 3) Servidor: completar el campo de Ajustes.
+  await traerConfig();
+}
+
 // ================= Pestañas y buscador =================
 document.getElementById("pestana-simple").addEventListener("click", () => cambiarLista("simple"));
 document.getElementById("pestana-completa").addEventListener("click", () => cambiarLista("completa"));
@@ -902,3 +1027,4 @@ if (cargarCatalogoGuardado()) mostrarCategorias();
 marcarPendiente(hayPendiente());
 mostrarVista(localStorage.getItem(CLAVE_VISTA) || "lista");
 actualizar();
+sincronizarAlAbrir();
