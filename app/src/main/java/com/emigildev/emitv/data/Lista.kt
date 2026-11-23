@@ -84,7 +84,7 @@ data class CanalEnLista(
 // ---------- Repetidos: la misma lógica que claveBase() de la página de curación ----------
 
 private val ETIQUETAS = Regex(
-    "\\b(fhd|uhd|hd|sd|4k|8k|hevc|h ?265|h ?264|1080p?|720p?|480p?|backup|bkp|alt|op ?\\d|opcion ?\\d|latam|ar|arg|argentina)\\b"
+    "\\b(fhd|uhd|hd|sd|4k|8k|hevc|h ?265|h ?264|1080p?|720p?|480p?|backup|bkp|alt|op ?\\\\d|opc ?\\\\d|opcion ?\\\\d|latam|ar|arg|argentina)\\b"
 )
 private val PREFIJO_PAIS = Regex("^\\s*[a-z]{2,3}\\s*[|:]", RegexOption.IGNORE_CASE)
 private val ACENTOS = Regex("\\p{Mn}+")

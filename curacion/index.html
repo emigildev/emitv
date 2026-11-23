@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f1115">
   <title>EmiTV · Curación</title>
-    <link rel="stylesheet" href="estilos.css?v=6">
+    <link rel="stylesheet" href="estilos.css?v=7">
 </head>
 <body data-vista="lista">
 
@@ -128,9 +128,26 @@
     </section>
   </main>
 
+  <!-- Elegir de qué canal de tu lista es respaldo un canal del catálogo -->
+  <dialog id="dialogo-respaldo">
+    <form method="dialog" class="dialogo">
+      <h2>¿De qué canal es respaldo?</h2>
+      <p id="dialogo-canal" class="ayuda"></p>
+      <div id="dialogo-pestanas" class="pestanas">
+        <button type="button" class="pestana" data-lista="simple">Simple</button>
+        <button type="button" class="pestana" data-lista="completa">Completa</button>
+      </div>
+      <input type="search" id="dialogo-buscador" class="campo" placeholder="Filtrar tu lista…">
+      <ul id="dialogo-lista"></ul>
+      <div class="fila fila-final">
+        <button value="cancelar">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Mensaje flotante (aparece unos segundos) -->
   <div id="notificacion" role="status" hidden></div>
 
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=7"></script>
 </body>
 </html>

@@ -118,7 +118,7 @@ function estaEnLista(nombreLista, ref) {
 
 // ================= Repetidos =================
 // Palabras que NO cambian qué canal es: calidad, códecs, "backup", país...
-const ETIQUETAS = /\b(fhd|uhd|hd|sd|4k|8k|hevc|h ?265|h ?264|1080p?|720p?|480p?|backup|bkp|alt|op ?\d|opcion ?\d|latam|ar|arg|argentina)\b/g;
+const ETIQUETAS = /\b(fhd|uhd|hd|sd|4k|8k|hevc|h ?265|h ?264|1080p?|720p?|480p?|backup|bkp|alt|op ?\d|opc ?\d|opcion ?\d|latam|ar|arg|argentina)\b/g;
 
 // Nombres con prefijo de país al principio: "AR | ...", "US: ..."
 const PREFIJO_PAIS = /^\s*[a-z]{2,3}\s*[|:]/i;
@@ -623,6 +623,8 @@ function refrescarCanales() {
         acciones.append(crearBoton(`+ Respaldo de ${parecido.item.nombre}`, () => agregarRespaldo(parecido.item, ref)));
       }
     }
+    // Y siempre: elegir vos de qué canal es respaldo (para nombres "disfrazados" como "ɛֆքռ")
+    acciones.append(crearBoton("Respaldo de…", () => elegirDestinoRespaldo(canal)));
 
     li.append(crearLogo(canal.stream_icon), nombre, detalle, acciones);
     ul.appendChild(li);
@@ -1436,6 +1438,76 @@ function mostrarFuentes() {
 }
 
 document.getElementById("boton-agregar-fuente").addEventListener("click", agregarFuente);
+
+// ================= Elegir de qué canal es respaldo =================
+// Para cuando la página no puede adivinarlo (por ejemplo, "ɛֆքռ" es ESPN):
+// desde el catálogo, elegís vos a qué canal de tu lista se agrega como respaldo.
+const dialogoRespaldo = document.getElementById("dialogo-respaldo");
+let refEnEleccion = null;    // el canal del catálogo que se va a agregar como respaldo
+let listaDialogo = "simple"; // en qué lista se está eligiendo
+
+function elegirDestinoRespaldo(canal) {
+  refEnEleccion = refDeVista(canal);
+  listaDialogo = listaActiva;
+  const datos = describirRef(refEnEleccion);
+  document.getElementById("dialogo-canal").textContent = `${limpiar(datos.nombre)} · ${datos.detalle}`;
+  document.getElementById("dialogo-buscador").value = "";
+  dibujarDialogo();
+  dialogoRespaldo.showModal();  // <dialog> nativo: se abre encima de todo y Esc lo cierra
+}
+
+function dibujarDialogo() {
+  for (const boton of document.querySelectorAll("#dialogo-pestanas .pestana")) {
+    boton.classList.toggle("activa", boton.dataset.lista === listaDialogo);
+  }
+
+  const filtro = document.getElementById("dialogo-buscador").value.trim().toLowerCase();
+  const ul = document.getElementById("dialogo-lista");
+  ul.innerHTML = "";
+
+  listas[listaDialogo].forEach((item, i) => {
+    if (filtro && !item.nombre.toLowerCase().includes(filtro)) return;
+
+    const esPrincipal = mismaRef(refDeItem(item), refEnEleccion);
+    const yaEsRespaldo = (item.respaldos ?? []).some(r => mismaRef(r, refEnEleccion));
+
+    const li = document.createElement("li");
+    const boton = crearBoton("", () => {
+      agregarRespaldo(item, refEnEleccion);
+      dialogoRespaldo.close();
+      notificar(`Agregado como respaldo de ${item.nombre} ✓`);
+    }, esPrincipal || yaEsRespaldo);
+    boton.type = "button";  // dentro de un <form>, un botón sin type lo enviaría (y cerraría el diálogo)
+    boton.className = "opcion-dialogo";
+
+    const numero = document.createElement("span");
+    numero.className = "numero";
+    numero.textContent = i + 1;
+    const nombre = document.createElement("span");
+    nombre.textContent = item.nombre;
+    const estado = document.createElement("small");
+    estado.textContent = esPrincipal ? "es este mismo canal" : yaEsRespaldo ? "✓ ya es respaldo" : "";
+
+    boton.append(numero, crearLogo(describirRef(refDeItem(item)).logo || item.logo), nombre, estado);
+    li.append(boton);
+    ul.append(li);
+  });
+
+  if (!ul.children.length) {
+    const vacio = document.createElement("li");
+    vacio.className = "ayuda";
+    vacio.textContent = "No hay canales que coincidan.";
+    ul.append(vacio);
+  }
+}
+
+for (const boton of document.querySelectorAll("#dialogo-pestanas .pestana")) {
+  boton.addEventListener("click", () => {
+    listaDialogo = boton.dataset.lista;
+    dibujarDialogo();
+  });
+}
+document.getElementById("dialogo-buscador").addEventListener("input", dibujarDialogo);
 
 // ================= Pestañas y buscador =================
 document.getElementById("pestana-simple").addEventListener("click", () => cambiarLista("simple"));
