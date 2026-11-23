@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T02:54:44.699Z",
+  "actualizado": "2026-11-23T02:56:11.018Z",
   "simple": [
     {
       "tipo": "xtream",
@@ -150,12 +150,6 @@
       "id": 130642,
       "nombre": "Telefe",
       "original": "AR | Telefe 1"
-    },
-    {
-      "tipo": "xtream",
-      "id": 355161,
-      "nombre": "Canal E",
-      "original": "Canal E | AR"
     },
     {
       "tipo": "xtream",
