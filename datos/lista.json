@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T01:25:53.540Z",
+  "actualizado": "2026-11-23T02:54:44.699Z",
   "simple": [
     {
       "tipo": "xtream",
@@ -74,13 +74,13 @@
     {
       "tipo": "xtream",
       "id": 355161,
-      "nombre": "Canal E AR",
+      "nombre": "Canal E",
       "original": "Canal E | AR"
     },
     {
       "tipo": "xtream",
       "id": 130639,
-      "nombre": "AR El trece 1",
+      "nombre": "El Trece",
       "original": "AR | El trece 1"
     }
   ],
@@ -154,13 +154,13 @@
     {
       "tipo": "xtream",
       "id": 355161,
-      "nombre": "Canal E AR",
+      "nombre": "Canal E",
       "original": "Canal E | AR"
     },
     {
       "tipo": "xtream",
       "id": 130639,
-      "nombre": "AR El trece 1",
+      "nombre": "El trece",
       "original": "AR | El trece 1"
     }
   ]
