@@ -20,6 +20,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import android.widget.Toast
 import com.emigildev.emitv.data.ConfigRemota
+import com.emigildev.emitv.data.ListasM3u
 
 class TvViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -27,6 +28,8 @@ class TvViewModel(app: Application) : AndroidViewModel(app) {
 
     // De dónde sale la lista. Para cambiar a otra fuente, se cambia SOLO esta línea.
     private val fuente: FuenteRemota = FuenteGitHub(app)
+
+    private val listasM3u = ListasM3u(app)
 
     private val configRepo = ConfigRepo(app)
 
@@ -68,11 +71,26 @@ class TvViewModel(app: Application) : AndroidViewModel(app) {
                 // 2) Si cambió el servidor, aplicarlo ANTES de pedirle los canales.
                 aplicarServidorRemoto(configRemota)
 
-                // 3) Los canales del proveedor, ya con el servidor correcto.
-                val catalogo = Xtream.todosLosCanales()
-
                 val items = if (modo == Modo.SIMPLE) listaRemota.simple else listaRemota.completa
-                val resueltos = resolver(items, catalogo)
+
+                // 3) En paralelo: el catálogo del proveedor y las listas M3U que usa tu lista.
+                //    Si una falla, seguimos con las demás: un problema en una no deja sin TV.
+                val fuentesUsadas = items.filter { it.tipo == "m3u" }.mapNotNull { it.fuente }.toSet()
+                val (catalogo, m3u) = coroutineScope {
+                    val pedidoCatalogo = async { runCatching { Xtream.todosLosCanales() } }
+                    val pedidosM3u = fuentesUsadas.associateWith { nombreFuente ->
+                        async {
+                            val url = listaRemota.fuentes[nombreFuente]
+                            if (url == null) emptyList()
+                            else runCatching { listasM3u.obtener(nombreFuente, url) }.getOrDefault(emptyList())
+                        }
+                    }
+                    pedidoCatalogo.await() to pedidosM3u.mapValues { it.value.await() }
+                }
+
+                val resueltos = resolver(items, catalogo.getOrDefault(emptyList()), m3u)
+                // Si no quedó ningún canal y el proveedor falló, mostrar ese error
+                if (resueltos.isEmpty()) catalogo.exceptionOrNull()?.let { throw it }
 
                 val ultimo = prefs.getInt(claveUltimoCanal, -1)
                 indice = resueltos.indexOfFirst { it.numero == ultimo }.coerceAtLeast(0)

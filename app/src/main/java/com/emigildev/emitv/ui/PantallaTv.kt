@@ -50,6 +50,7 @@ import com.emigildev.emitv.R
 import com.emigildev.emitv.data.CanalEnLista
 import com.emigildev.emitv.data.Xtream
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 
 // Teclas que cuentan como "OK" según el control.
 private val TECLAS_OK = setOf(
@@ -151,24 +152,23 @@ fun Reproductor(
         onDispose { player.removeListener(escucha) }
     }
 
-    // 4. Cada vez que cambia el canal: cargar su URL y reproducir.
-    LaunchedEffect(canal.id) {
+    // 4.
+    LaunchedEffect(canal) {
         error = null
-        val item = MediaItem.Builder()
-            .setUri(Xtream.urlEnVivo(canal.principal))
-            .setMimeType(
-                if (Xtream.FORMATO_EN_VIVO == "m3u8") MimeTypes.APPLICATION_M3U8
-                else MimeTypes.VIDEO_MP2T
-            )
-            .build()
-        player.setMediaItem(item)
-        player.prepare()
-        player.playWhenReady = true
+        try {
+            player.setMediaSource(crearMediaSource(canal.principal))
+            player.prepare()
+            player.playWhenReady = true
+        } catch (e: CancellationException) {
+            throw e  // se cambió de canal mientras se preparaba: no es un error
+        } catch (e: Exception) {
+            error = "No se pudo abrir el canal:\n${e.message ?: e}"
+        }
     }
 
     // 5. Mostrar el cartel 3 segundos después de cada cambio.
     var mostrarCartel by remember { mutableStateOf(true) }
-    LaunchedEffect(canal.id) {
+    LaunchedEffect(canal) {
         mostrarCartel = true
         delay(3000)
         mostrarCartel = false
