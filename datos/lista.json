@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T05:09:14.729Z",
+  "actualizado": "2026-11-23T05:36:28.458Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -307,10 +307,10 @@
     },
     {
       "tipo": "m3u",
-      "fuente": "iptv-org",
-      "clave": "Canal22.ar@SD",
-      "nombre": "Canal 22",
-      "logo": "https://i.imgur.com/R4wXVxf.png"
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___",
+      "nombre": "Canal 22 - WebTV - CABA TV Web - CD Cd Aut Bs As",
+      "logo": "https://radiosargentina.com.ar/png/VI---C22.png"
     },
     {
       "tipo": "xtream",
