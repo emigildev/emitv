@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T14:51:40.263Z",
+  "actualizado": "2026-11-23T15:31:28.190Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -546,6 +546,16 @@
           "fuente": "ariptv",
           "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA__26.1CANAL26___"
         }
+      ]
+    },
+    {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA_____CCGTNESPANO",
+      "nombre": "CGTN Espanol",
+      "logo": "https://radiosargentina.com.ar/png/VI--CGTN.png",
+      "respaldos": [
+        365815
       ]
     }
   ]
