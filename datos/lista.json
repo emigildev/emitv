@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-23T22:25:23.922Z",
+  "actualizado": "2026-11-24T22:29:58.166Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -10,7 +10,10 @@
       "tipo": "xtream",
       "id": 130579,
       "nombre": "A24",
-      "original": "AR | A24 1"
+      "original": "AR | A24 1",
+      "respaldos": [
+        130580
+      ]
     },
     {
       "tipo": "m3u",
@@ -66,7 +69,10 @@
       "tipo": "xtream",
       "id": 130633,
       "nombre": "TV Publica",
-      "original": "AR | Tv Publica 1"
+      "original": "AR | Tv Publica 1",
+      "respaldos": [
+        130634
+      ]
     },
     {
       "tipo": "xtream",
