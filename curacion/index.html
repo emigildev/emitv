@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f1115">
   <title>EmiTV · Curación</title>
-    <link rel="stylesheet" href="estilos.css?v=8">
+    <link rel="stylesheet" href="estilos.css?v=9">
 </head>
 <body data-vista="lista">
 
@@ -157,9 +157,39 @@
     </form>
   </dialog>
 
+  <!-- Editar un canal de tu lista: nombre, posición y señal -->
+  <dialog id="dialogo-editar">
+    <form method="dialog" class="dialogo">
+      <h2>Editar canal</h2>
+      <label class="campo-archivo">Nombre
+        <input type="text" id="editar-nombre" class="campo">
+      </label>
+      <label class="campo-archivo">Número (posición en la lista)
+        <input type="number" id="editar-posicion" class="campo" min="1">
+      </label>
+      <div id="editar-senal"></div>
+      <label class="campo-archivo">¿Cambió el enlace de YouTube? Pegá el nuevo
+        <input type="text" id="editar-youtube" class="campo" placeholder="https://www.youtube.com/watch?v=…">
+      </label>
+      <label class="campo-archivo">O reemplazalo por otro canal de cualquier fuente
+        <input type="search" id="editar-buscador" class="campo" placeholder="Buscar…">
+      </label>
+      <div id="editar-resultados"></div>
+      <label class="casilla">
+        <input type="checkbox" id="editar-conservar">
+        Guardar la señal anterior como respaldo
+      </label>
+      <p id="editar-estado" class="estado"></p>
+      <div class="fila fila-final">
+        <button value="cancelar">Cancelar</button>
+        <button type="button" id="editar-guardar" class="primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Mensaje flotante (aparece unos segundos) -->
   <div id="notificacion" role="status" hidden></div>
 
-    <script src="app.js?v=8"></script>
+    <script src="app.js?v=9"></script>
 </body>
 </html>

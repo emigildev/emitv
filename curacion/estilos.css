@@ -226,13 +226,43 @@ button.peligro { border-color: var(--peligro); color: var(--peligro); }
 .pestana { border: none; background: none; padding: 6px 14px; border-radius: 9px; }
 .pestana.activa { background: var(--acento); color: #0b0d12; font-weight: 700; }
 
-#mi-lista .numero {
-  width: 2em;
-  text-align: right;
+/* El número es un campo: se puede escribir otro para mover el canal */
+#mi-lista input.numero {
+  flex: none;
+  width: 3.2em;
+  text-align: center;
   color: var(--suave);
   font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 4px 2px;
+  -moz-appearance: textfield;             /* sin las flechitas del campo numérico */
 }
+#mi-lista input.numero::-webkit-inner-spin-button,
+#mi-lista input.numero::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+#mi-lista input.numero:hover, #mi-lista input.numero:focus { border-color: var(--acento); color: var(--texto); outline: none; }
+
+/* Arrastrar y soltar (PC) */
+.manija { cursor: grab; color: var(--suave); padding: 0 2px; user-select: none; }
+#mi-lista li.arrastrando { opacity: 0.4; }
+#mi-lista li.destino { box-shadow: inset 0 3px 0 var(--acento); }
+@media (pointer: coarse) { .manija { display: none; } }   /* en el celular no se arrastra */
+
+/* Diálogo de edición */
+#dialogo-editar {
+  width: min(560px, calc(100% - 24px));
+  max-height: 90vh;
+  padding: 0;
+  background: var(--tarjeta);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+#dialogo-editar::backdrop { background: rgba(0, 0, 0, 0.6); }
+#dialogo-editar .dialogo { overflow-y: auto; }
+#editar-resultados { max-height: 30vh; overflow-y: auto; }
+.casilla { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--suave); }
 #mi-lista input {
   flex: 1;
   min-width: 0;
@@ -397,4 +427,10 @@ button.con-respaldos { border-color: var(--acento); color: var(--acento); }
   #mi-lista .acciones { flex-basis: auto; }
 
   #notificacion { bottom: 24px; }
+}
+
+/* El canal que acabás de mover se resalta un momento */
+#mi-lista > li.recien-movido {
+  background: rgba(96, 165, 250, 0.18);
+  transition: background 0.3s;
 }

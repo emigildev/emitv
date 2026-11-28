@@ -412,7 +412,13 @@ function hacerPrincipal(item, ref) {
   const anterior = refDeItem(item);
   const panelAbierto = panelesAbiertos.delete(clavePanel(item));
   item.respaldos = [anterior, ...(item.respaldos ?? []).filter(r => !mismaRef(r, ref))];
+  ponerPrincipal(item, ref);
+  if (panelAbierto) panelesAbiertos.add(clavePanel(item));  // mantenerlo abierto
+  huboCambio();
+}
 
+// Cambia la señal principal de un ítem (de cualquier fuente). Mantiene nombre, número y respaldos.
+function ponerPrincipal(item, ref) {
   if (typeof ref === "object" && ref.tipo === "youtube") {
     item.tipo = "youtube";
     delete item.canal;
@@ -442,9 +448,8 @@ function hacerPrincipal(item, ref) {
     delete item.video;
     delete item.logo;
   }
-
-  if (panelAbierto) panelesAbiertos.add(clavePanel(item));  // mantenerlo abierto
-  huboCambio();
+  // Si la nueva principal estaba entre los respaldos, ya no hace falta ahí
+  item.respaldos = (item.respaldos ?? []).filter(r => !mismaRef(r, ref));
 }
 
 function clavePanel(item) {
@@ -456,6 +461,24 @@ function alternarPanel(item) {
   if (panelesAbiertos.has(clave)) panelesAbiertos.delete(clave);
   else panelesAbiertos.add(clave);
   mostrarLista();
+}
+
+// Mueve un canal a otra posición (las dos empiezan en 0). Los del medio se corren un lugar.
+function moverA(desde, hasta) {
+  const lista = listas[listaActiva];
+  hasta = Math.max(0, Math.min(lista.length - 1, hasta));
+  if (desde === hasta) return;
+  const [item] = lista.splice(desde, 1);   // sacarlo...
+  lista.splice(hasta, 0, item);            // ...y meterlo en el lugar nuevo
+  huboCambio();
+  notificar(`${item.nombre} ahora es el ${hasta + 1}`);
+  // Mostrar el canal en su lugar nuevo, resaltado un momento
+  const fila = document.querySelector(`#mi-lista > li:nth-child(${hasta + 1})`);
+  if (fila) {
+    fila.scrollIntoView({ block: "center", behavior: "smooth" });
+    fila.classList.add("recien-movido");
+    setTimeout(() => fila.classList.remove("recien-movido"), 1500);
+  }
 }
 
 function quitar(indice) {
@@ -706,9 +729,44 @@ function mostrarLista() {
     const li = document.createElement("li");
     if (principal.falta) li.classList.add("faltante");
 
-    const numero = document.createElement("span");
+    // El número se puede escribir: tocás el 57, escribís 12 y Enter -> pasa a ser el 12.
+    const numero = document.createElement("input");
+    numero.type = "number";
     numero.className = "numero";
-    numero.textContent = i + 1;
+    numero.min = 1;
+    numero.max = lista.length;
+    numero.value = i + 1;
+    numero.title = "Escribí otro número para moverlo a esa posición";
+    numero.addEventListener("change", () => {
+      const nuevo = parseInt(numero.value, 10);
+      if (Number.isInteger(nuevo)) moverA(i, nuevo - 1);
+      else numero.value = i + 1;
+    });
+
+    // En la PC, también se puede arrastrar la fila (desde la manija ⠿) y soltarla en otro lugar.
+    const manija = document.createElement("span");
+    manija.className = "manija";
+    manija.textContent = "⠿";
+    manija.title = "Arrastrar para mover";
+    // Solo la manija se arrastra (si fuera toda la fila, no se podría seleccionar texto del nombre).
+    manija.draggable = true;
+    manija.addEventListener("dragstart", (evento) => {
+      evento.dataTransfer.setData("text/plain", String(i));
+      evento.dataTransfer.setDragImage(li, 20, 20);   // que se "lleve" la fila entera
+      li.classList.add("arrastrando");
+    });
+    manija.addEventListener("dragend", () => li.classList.remove("arrastrando"));
+    li.addEventListener("dragover", (evento) => {
+      evento.preventDefault();          // sin esto, el navegador no deja soltar acá
+      li.classList.add("destino");
+    });
+    li.addEventListener("dragleave", () => li.classList.remove("destino"));
+    li.addEventListener("drop", (evento) => {
+      evento.preventDefault();
+      li.classList.remove("destino");
+      const desde = parseInt(evento.dataTransfer.getData("text/plain"), 10);
+      if (Number.isInteger(desde)) moverA(desde, i);
+    });
 
     // El nombre se edita ahí mismo. "change" se dispara al salir del campo o con Enter.
     const campo = document.createElement("input");
@@ -737,10 +795,11 @@ function mostrarLista() {
       botonRespaldos,
       crearBoton("↑", () => mover(i, -1), i === 0),
       crearBoton("↓", () => mover(i, +1), i === lista.length - 1),
+      crearBoton("✎", () => abrirEdicion(i)),
       crearBoton("✕", () => quitar(i)),
     );
 
-    li.append(numero, crearLogo(principal.logo || item.logo), campo, acciones);
+    li.append(manija, numero, crearLogo(principal.logo || item.logo), campo, acciones);
     ul.appendChild(li);
 
     if (abierto) ul.appendChild(crearPanelRespaldos(item));
@@ -1556,6 +1615,110 @@ document.getElementById("boton-yt-respaldo").addEventListener("click", () => {
   const canal = canalDelFormularioYoutube();
   if (canal) elegirDestinoRespaldo(canal);
 });
+
+// ================= Editar un canal =================
+// Para cambiarle la señal (por ejemplo, el enlace nuevo de un vivo de YouTube)
+// SIN perder su número, su nombre ni sus respaldos.
+const dialogoEditar = document.getElementById("dialogo-editar");
+let edicion = null;   // { indice, refNueva }: lo que se está editando
+
+function abrirEdicion(indice) {
+  const item = listas[listaActiva][indice];
+  edicion = { indice, refNueva: null };
+  document.getElementById("editar-nombre").value = item.nombre;
+  document.getElementById("editar-posicion").value = indice + 1;
+  document.getElementById("editar-posicion").max = listas[listaActiva].length;
+  document.getElementById("editar-youtube").value = "";
+  document.getElementById("editar-buscador").value = "";
+  document.getElementById("editar-resultados").innerHTML = "";
+  document.getElementById("editar-conservar").checked = false;
+  document.getElementById("editar-estado").textContent = "";
+  dibujarSenalEdicion();
+  dialogoEditar.showModal();
+}
+
+// Muestra la señal actual, o la nueva elegida (todavía sin guardar).
+function dibujarSenalEdicion() {
+  const item = listas[listaActiva][edicion.indice];
+  const contenedor = document.getElementById("editar-senal");
+  contenedor.innerHTML = "";
+  const titulo = document.createElement("p");
+  titulo.className = "ayuda";
+  titulo.textContent = edicion.refNueva ? "Señal nueva (se aplica al guardar):" : "Señal actual:";
+  contenedor.append(titulo, crearFilaRef(edicion.refNueva ?? refDeItem(item)));
+}
+
+// Buscador: cualquier canal de cualquier fuente puede ser la nueva señal
+document.getElementById("editar-buscador").addEventListener("input", (evento) => {
+  const resultados = document.getElementById("editar-resultados");
+  resultados.innerHTML = "";
+  const texto = evento.target.value.trim().toLowerCase();
+  if (texto.length < 2) return;
+  const coincide = nombre => limpiar(nombre).toLowerCase().includes(texto);
+  const encontrados = [
+    ...canales.filter(c => coincide(c.name)),
+    ...entradasM3u.filter(e => coincide(e.nombre)).map(comoCanal),
+  ].slice(0, 25);
+  if (encontrados.length === 0) {
+    resultados.textContent = "Sin resultados.";
+    return;
+  }
+  for (const canal of encontrados) {
+    const ref = refDeVista(canal);
+    const boton = crearBoton("Usar este", () => {
+      edicion.refNueva = ref;
+      dibujarSenalEdicion();
+    });
+    boton.type = "button";
+    resultados.append(crearFilaRef(ref, boton));
+  }
+});
+
+// Enlace nuevo de YouTube (lo más común: el canal empezó otro vivo)
+document.getElementById("editar-youtube").addEventListener("input", (evento) => {
+  const estado = document.getElementById("editar-estado");
+  const texto = evento.target.value.trim();
+  if (!texto) return;
+  const datos = leerYoutube(texto);
+  if (!datos) {
+    estado.textContent = "No reconozco ese enlace de YouTube.";
+    return;
+  }
+  estado.textContent = "";
+  const item = listas[listaActiva][edicion.indice];
+  edicion.refNueva = refYoutube({ ...datos, nombre: item.nombre });
+  dibujarSenalEdicion();
+});
+
+function guardarEdicion() {
+  const lista = listas[listaActiva];
+  const item = lista[edicion.indice];
+
+  // 1) Nombre
+  const nombre = document.getElementById("editar-nombre").value.trim();
+  if (nombre) item.nombre = nombre;
+
+  // 2) Señal nueva (si se eligió)
+  if (edicion.refNueva && !mismaRef(edicion.refNueva, refDeItem(item))) {
+    const anterior = refDeItem(item);
+    ponerPrincipal(item, edicion.refNueva);
+    if (document.getElementById("editar-conservar").checked) {
+      item.respaldos = [anterior, ...(item.respaldos ?? [])];
+    }
+  }
+
+  // 3) Posición (al final, porque cambia los índices)
+  const posicion = parseInt(document.getElementById("editar-posicion").value, 10);
+  dialogoEditar.close();
+  if (Number.isInteger(posicion) && posicion - 1 !== edicion.indice) {
+    moverA(edicion.indice, posicion - 1);   // moverA ya guarda y redibuja
+  } else {
+    huboCambio();
+    notificar(`${item.nombre} actualizado ✓`);
+  }
+}
+
+document.getElementById("editar-guardar").addEventListener("click", guardarEdicion);
 
 // ================= Elegir de qué canal es respaldo =================
 // Para cuando la página no puede adivinarlo (por ejemplo, "ɛֆքռ" es ESPN):
