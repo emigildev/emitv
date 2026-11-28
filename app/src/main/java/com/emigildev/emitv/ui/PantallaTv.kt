@@ -94,6 +94,8 @@ fun PantallaTv(
                     onNumero = vm::irANumero,
                     mostrarDiagnostico = mostrarDiagnostico,
                     onAjustes = onAjustes,
+                    permitirLista = !vm.modoSimple,          // en modo Simple, OK no abre la lista
+                    onTodasFallaron = vm::alFallarTodas,
                 )
             }
         }
@@ -111,6 +113,8 @@ fun Reproductor(
     onNumero: (Int) -> Boolean,
     mostrarDiagnostico: Boolean,
     onAjustes: () -> Unit,
+    permitirLista: Boolean,           // false en modo Simple: OK muestra el cartel en grande
+    onTodasFallaron: () -> Unit,      // avisa al ViewModel: quizás cambiaron las direcciones
 ) {
     val context = LocalContext.current
 
@@ -233,6 +237,7 @@ fun Reproductor(
     // 4d. Si fallaron todas: avisar, esperar y volver a empezar desde la principal.
     LaunchedEffect(fallaronTodas) {
         if (fallaronTodas) {
+            onTodasFallaron()   // que la app revise si hay direcciones nuevas
             player.stop()
             senalQueAnduvo.remove(canal.numero)
             delay(MS_REINTENTO)
@@ -252,9 +257,10 @@ fun Reproductor(
         }
     }
 
-    // 5. Mostrar el cartel 3 segundos después de cada cambio.
+    // 5. Mostrar el cartel unos segundos después de cada cambio (y cada vez que se pide con OK).
     var mostrarCartel by remember { mutableStateOf(true) }
-    LaunchedEffect(canal) {
+    var pedidoCartel by remember { mutableIntStateOf(0) }
+    LaunchedEffect(canal, pedidoCartel) {
         mostrarCartel = true
         delay(3000)
         mostrarCartel = false
@@ -295,7 +301,7 @@ fun Reproductor(
         when {
             accion == YoutubeActivity.SIGUIENTE -> onSiguiente()
             accion == YoutubeActivity.ANTERIOR -> onAnterior()
-            accion == YoutubeActivity.LISTA -> listaAbierta = true
+            accion == YoutubeActivity.LISTA -> if (permitirLista) listaAbierta = true
             accion == YoutubeActivity.ERROR -> {
                 error = "YouTube: " + resultado.data?.getStringExtra(YoutubeActivity.EXTRA_DETALLE).orEmpty()
                 fallos++   // -> respaldo automático
@@ -311,7 +317,7 @@ fun Reproductor(
     LaunchedEffect(senalActual, ronda, fallaronTodas, listaAbierta, youtubeAbierto) {
         if (senalActual is Senal.DeYoutube && !fallaronTodas && !listaAbierta && !youtubeAbierto) {
             youtubeAbierto = true
-            lanzadorYoutube.launch(YoutubeActivity.intent(context, senalActual, canal.nombre, numero))
+            lanzadorYoutube.launch(YoutubeActivity.intent(context, senalActual, canal.nombre, numero, permitirLista))
         }
     }
 
@@ -344,7 +350,8 @@ fun Reproductor(
                             okLargo = false
                             onAjustes()          // OK largo -> ajustes
                         } else {
-                            listaAbierta = true  // OK corto -> lista
+                            // OK corto -> la lista; en modo Simple, el cartel en grande
+                            if (permitirLista) listaAbierta = true else pedidoCartel++
                         }
                     }
                     return@onKeyEvent true                      // consumimos tanto KeyDown como KeyUp
@@ -402,7 +409,7 @@ fun Reproductor(
 
         // El cartel no se muestra mientras la lista está abierta.
         if (mostrarCartel && !listaAbierta) {
-            Cartel(canal, numero, Modifier.align(Alignment.TopStart))
+            Cartel(canal, numero, grande = !permitirLista, modifier = Modifier.align(Alignment.TopStart))
         }
 
         // NUEVO: la lista.
@@ -491,23 +498,32 @@ fun Reproductor(
 }
 
 @Composable
-fun Cartel(canal: CanalEnLista, numero: Int, modifier: Modifier = Modifier) {
+fun Cartel(canal: CanalEnLista, numero: Int, grande: Boolean = false, modifier: Modifier = Modifier) {
+    // "grande": para modo Simple, pensado para leer de lejos y con poca visión.
     Row(
         modifier
             .padding(32.dp)
-            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .background(Color.Black.copy(alpha = if (grande) 0.85f else 0.6f), RoundedCornerShape(16.dp))
+            .padding(horizontal = if (grande) 40.dp else 24.dp, vertical = if (grande) 24.dp else 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (grande) 28.dp else 16.dp),
     ) {
-        Text("$numero", style = MaterialTheme.typography.displaySmall, color = Color.White)
+        Text(
+            "$numero",
+            style = if (grande) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displaySmall,
+            color = Color.White,
+        )
         AsyncImage(
             model = canal.logo?.takeIf { it.isNotBlank() },
             contentDescription = null,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.size(56.dp),
+            modifier = Modifier.size(if (grande) 120.dp else 56.dp),
         )
-        Text(canal.nombre, style = MaterialTheme.typography.headlineSmall, color = Color.White)
+        Text(
+            canal.nombre,
+            style = if (grande) MaterialTheme.typography.displayMedium else MaterialTheme.typography.headlineSmall,
+            color = Color.White,
+        )
     }
 }
 

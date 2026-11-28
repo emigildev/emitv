@@ -44,6 +44,8 @@ class YoutubeActivity : ComponentActivity() {
     private val manejador = Handler(Looper.getMainLooper())
 
     private var yaReprodujo = false    // ¿ya empezó el canal en sí (no la publicidad)?
+    private var permitirLista = true   // en modo Simple, OK no abre la lista: muestra el cartel
+    private var textoCartel = ""
     private var terminada = false
     private var digitos = ""
 
@@ -78,9 +80,11 @@ class YoutubeActivity : ComponentActivity() {
             addJavascriptInterface(PuenteYoutube { evento, dato -> runOnUiThread { alAviso(evento, dato) } }, "EmiTV")
         }
 
+        permitirLista = intent.getBooleanExtra(EXTRA_PERMITIR_LISTA, true)
+
         cartel = TextView(this).apply {
             setTextColor(Color.WHITE)
-            textSize = 28f
+            textSize = if (permitirLista) 28f else 48f   // más grande en modo Simple
             setBackgroundColor(Color.argb(160, 0, 0, 0))
             setPadding(32, 16, 32, 16)
         }
@@ -96,7 +100,8 @@ class YoutubeActivity : ComponentActivity() {
         setContentView(contenedor)
 
         val numero = intent.getIntExtra(EXTRA_NUMERO, 0)
-        mostrarCartel("$numero  ${intent.getStringExtra(EXTRA_NOMBRE).orEmpty()}")
+        textoCartel = "$numero  ${intent.getStringExtra(EXTRA_NOMBRE).orEmpty()}"
+        mostrarCartel(textoCartel)
 
         val canal = intent.getStringExtra(EXTRA_CANAL)
         val video = intent.getStringExtra(EXTRA_VIDEO)
@@ -138,7 +143,13 @@ class YoutubeActivity : ComponentActivity() {
 
         // OK y Atrás actúan al SOLTAR (igual que en la pantalla principal)
         if (esOk || codigo == KeyEvent.KEYCODE_BACK) {
-            if (evento.action == KeyEvent.ACTION_UP) terminar(if (esOk) LISTA else SALIR)
+            if (evento.action == KeyEvent.ACTION_UP) {
+                when {
+                    !esOk -> terminar(SALIR)
+                    permitirLista -> terminar(LISTA)
+                    else -> mostrarCartel(textoCartel)   // modo Simple: solo recordar qué canal es
+                }
+            }
             return true
         }
         if (evento.action != KeyEvent.ACTION_DOWN) return super.dispatchKeyEvent(evento)
@@ -206,6 +217,7 @@ class YoutubeActivity : ComponentActivity() {
         private const val EXTRA_VIDEO = "video"
         private const val EXTRA_NOMBRE = "nombre"
         private const val EXTRA_NUMERO = "numero"
+        private const val EXTRA_PERMITIR_LISTA = "permitirLista"
 
         // Lo que devuelve al cerrarse
         const val EXTRA_ACCION = "accion"
@@ -218,11 +230,12 @@ class YoutubeActivity : ComponentActivity() {
         const val ERROR = "error"
         const val NUMERO = "numero:"
 
-        fun intent(context: Context, senal: Senal.DeYoutube, nombre: String, numero: Int): Intent =
+        fun intent(context: Context, senal: Senal.DeYoutube, nombre: String, numero: Int, permitirLista: Boolean): Intent =
             Intent(context, YoutubeActivity::class.java)
                 .putExtra(EXTRA_CANAL, senal.canal)
                 .putExtra(EXTRA_VIDEO, senal.video)
                 .putExtra(EXTRA_NOMBRE, nombre)
                 .putExtra(EXTRA_NUMERO, numero)
+                .putExtra(EXTRA_PERMITIR_LISTA, permitirLista)
     }
 }

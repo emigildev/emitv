@@ -4,6 +4,9 @@ import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -14,6 +17,9 @@ import java.util.concurrent.TimeUnit
 interface FuenteRemota {
     suspend fun obtenerLista(): ListaRemota
     suspend fun obtenerConfig(): ConfigRemota
+
+    /** Una "huella" por archivo: si alguna cambia, hay algo nuevo para descargar. */
+    suspend fun huellas(): Map<String, String>
 }
 
 class FuenteGitHub(context: Context) : FuenteRemota {
@@ -25,6 +31,15 @@ class FuenteGitHub(context: Context) : FuenteRemota {
 
     override suspend fun obtenerConfig(): ConfigRemota =
         obtener("datos/config.json", ConfigRemota.serializer())
+
+    // Las huellas (sha) de los archivos de datos/, SIN descargar su contenido: un pedido chiquito.
+    override suspend fun huellas(): Map<String, String> = withContext(Dispatchers.IO) {
+        val texto = pedir("$API/datos", aceptar = "application/vnd.github+json")
+        jsonLista.parseToJsonElement(texto).jsonArray.associate { archivo ->
+            val datos = archivo.jsonObject
+            datos.getValue("path").jsonPrimitive.content to datos.getValue("sha").jsonPrimitive.content
+        }
+    }
 
     // Descarga un archivo del repo y lo convierte con "molde".
     // Si no se puede, usa la última copia buena guardada en el dispositivo.
