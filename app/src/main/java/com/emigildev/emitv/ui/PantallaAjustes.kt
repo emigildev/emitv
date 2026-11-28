@@ -76,6 +76,7 @@ fun PantallaAjustes(
                     .getOrNull() ?: "?"
             }
             Text("EmiTV $version", style = MaterialTheme.typography.titleMedium)
+            OpcionActualizar()
             Spacer(Modifier.height(8.dp))
             Text("Ajustes", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(8.dp))
