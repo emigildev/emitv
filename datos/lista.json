@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-28T15:23:14.361Z",
+  "actualizado": "2026-11-28T17:37:48.487Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -174,9 +174,9 @@
     },
     {
       "tipo": "youtube",
-      "video": "tInHlI4KdmQ",
       "nombre": "El Destape",
-      "logo": "https://i.ytimg.com/vi/tInHlI4KdmQ/hqdefault.jpg"
+      "logo": "https://i.ytimg.com/vi/4-9BvD4kBTc/hqdefault.jpg",
+      "video": "4-9BvD4kBTc"
     },
     {
       "tipo": "xtream",
