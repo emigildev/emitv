@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "actualizado": "2026-11-28T17:37:48.487Z",
+  "actualizado": "2026-11-28T19:39:02.802Z",
   "fuentes": {
     "iptv-org": "https://iptv-org.github.io/iptv/countries/ar.m3u",
     "ariptv": "https://radiosargentina.com.ar/TVAR.m3u"
@@ -148,16 +148,13 @@
       "logo": "https://i.imgur.com/uBBZR1X.png"
     },
     {
-      "tipo": "xtream",
-      "id": 355121,
+      "tipo": "m3u",
       "nombre": "Argentinisima",
-      "original": "Argentinisima Satelital | AR",
+      "fuente": "iptv-org",
+      "clave": "ArgentinisimaSatelital.ar@SD",
+      "logo": "https://i.imgur.com/xFgJawa.png",
       "respaldos": [
-        {
-          "tipo": "m3u",
-          "fuente": "iptv-org",
-          "clave": "ArgentinisimaSatelital.ar@SD"
-        },
+        355121,
         {
           "tipo": "m3u",
           "fuente": "ariptv",
@@ -751,7 +748,7 @@
     {
       "tipo": "xtream",
       "id": 355121,
-      "nombre": "Argentinisima Satelital",
+      "nombre": "Argentinisima",
       "original": "Argentinisima Satelital | AR",
       "respaldos": [
         {
@@ -823,6 +820,21 @@
       "original": "AR**E$PÑ**4"
     },
     {
+      "tipo": "m3u",
+      "fuente": "ariptv",
+      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___",
+      "nombre": "Canal 22",
+      "logo": "https://radiosargentina.com.ar/png/VI---C22.png",
+      "respaldos": [
+        355130,
+        {
+          "tipo": "m3u",
+          "fuente": "iptv-org",
+          "clave": "Canal22.ar@SD"
+        }
+      ]
+    },
+    {
       "tipo": "xtream",
       "id": 130648,
       "nombre": "ESPN Premium",
@@ -839,21 +851,6 @@
           "tipo": "m3u",
           "fuente": "iptv-org",
           "clave": "ESPNPremium.ar@HD"
-        }
-      ]
-    },
-    {
-      "tipo": "m3u",
-      "fuente": "ariptv",
-      "clave": "https://radiosargentina.com.ar/php/artvDI.php?id=ARCD_CABA___WEBCANAL22___",
-      "nombre": "Canal 22",
-      "logo": "https://radiosargentina.com.ar/png/VI---C22.png",
-      "respaldos": [
-        355130,
-        {
-          "tipo": "m3u",
-          "fuente": "iptv-org",
-          "clave": "Canal22.ar@SD"
         }
       ]
     },
